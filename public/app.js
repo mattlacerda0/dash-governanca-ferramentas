@@ -226,7 +226,7 @@ function switchView(view) {
   $$("[data-view-panel]").forEach((panel) => panel.classList.toggle("is-active", panel.dataset.viewPanel === view));
   const titles = {
     overview: ["Governança de ferramentas", "Custos, stack e eficiência operacional em uma visão única."],
-    pe: ["Product & Experience", "Responsáveis, verticais e custos sob governança de Ana Gazzo."],
+    pe: ["Product & Experience", "Responsáveis, verticais e custos sob governança."],
     redundancies: ["Redundâncias cross-sector", "Oportunidades de unificação de contratos e licenças."],
     reimbursements: ["Reembolsos & Shadow IT", "Assinaturas custeadas por colaboradores e registros Clara."],
   };

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Governança de ferramentas | QuartaVia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Carme&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="portal">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <span class="brand-mark">QV</span>
+        <div><strong>QuartaVia</strong><small>BizOps & Governança</small></div>
+      </div>
+      <nav class="side-nav" aria-label="Visões do dashboard">
+        <button class="nav-item is-active" data-view="overview"><span>01</span> Overview da stack</button>
+        <button class="nav-item" data-view="pe"><span>02</span> Product & Experience</button>
+        <button class="nav-item" data-view="redundancies"><span>03</span> Redundâncias</button>
+        <button class="nav-item" data-view="reimbursements"><span>04</span> Reembolsos</button>
+      </nav>
+      <div class="approver">
+        <span class="avatar">AG</span>
+        <div><strong>Ana Gazzo</strong><small>Aprovadora final P&E</small></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="menu-button" id="menuButton" aria-label="Abrir menu" aria-expanded="false"><span aria-hidden="true">☰</span><span>Menu</span></button>
+        <div>
+          <p class="eyebrow">Governança operacional</p>
+          <h1 id="pageTitle">Governança de ferramentas</h1>
+          <p class="subtitle" id="pageSubtitle">Custos, stack e eficiência operacional em uma visão única.</p>
+        </div>
+        <div class="top-actions">
+          <span class="source-pill" id="sourcePill">Carregando…</span>
+          <button class="btn btn-secondary" id="exportButton">Exportar CSV</button>
+        </div>
+      </header>
+
+      <section class="filters" aria-label="Filtros globais">
+        <label>Ano
+          <select id="yearFilter" aria-label="Ano"></select>
+        </label>
+        <label>Mês
+          <select id="monthFilter" aria-label="Mês"><option value="all">Todos os meses</option></select>
+        </label>
+        <label>Categoria / vertical
+          <select id="verticalFilter"><option value="all">Todas as verticais</option></select>
+        </label>
+        <div class="filter-note">Filtros globais atualizam KPIs, gráficos e a tabela de governança.</div>
+        <button class="btn btn-primary" id="refreshButton">Atualizar</button>
+      </section>
+
+      <div class="notice hidden" id="warning" role="status"></div>
+      <div class="status" id="status" role="status">Carregando dados de governança…</div>
+
+      <section id="content" class="hidden">
+        <div class="kpi-grid" id="kpis"></div>
+
+        <div class="view is-active" data-view-panel="overview">
+          <section class="section-head">
+            <div><p class="eyebrow">Visão geral</p><h2>Panorama da stack</h2></div>
+            <p>Distribuição dos custos, volume por setor e evolução mensal.</p>
+          </section>
+          <div class="chart-grid">
+            <article class="card chart-card"><div class="card-head"><p class="eyebrow">Custo estimado</p><h3>Distribuição de custos P&E</h3><p>Participação mensal por ferramenta.</p></div><div id="costChart"></div></article>
+            <article class="card chart-card"><div class="card-head"><p class="eyebrow">Inventário corporativo</p><h3>Ferramentas por setor</h3><p>Volume de contratos por área.</p></div><div id="sectorChart"></div></article>
+          </div>
+          <article class="card chart-card wide"><div class="card-head"><p class="eyebrow">Evolução</p><h3>Custo mensal e tamanho do time</h3><p>Relação entre custo e headcount P&E.</p></div><div id="monthlyChart"></div></article>
+        </div>
+
+        <div class="view" data-view-panel="pe">
+          <section class="section-head">
+            <div><p class="eyebrow">Product & Experience</p><h2>Governança por vertical</h2></div>
+            <p>Inventário operacional das 23 ferramentas mapeadas.</p>
+          </section>
+          <div class="vertical-grid" id="verticalCards"></div>
+          <article class="card table-card">
+            <div class="table-toolbar">
+              <div><p class="local-hint">Filtro local da tabela</p><h3>Inventário detalhado</h3></div>
+              <label class="search-label">Buscar ferramenta<input type="search" id="tableSearch" placeholder="Nome, responsável ou oportunidade"></label>
+            </div>
+            <div class="table-wrap"><table class="qv-table gd-table">
+              <thead><tr><th>Ferramenta</th><th>Verticais conectadas</th><th>Responsável</th><th>Aprovador final</th><th class="num">Custo mensal</th><th>Redundância</th><th>Oportunidade BizOps</th></tr></thead>
+              <tbody id="toolsTable"></tbody>
+            </table></div>
+            <p class="table-count" id="tableCount"></p>
+          </article>
+        </div>
+
+        <div class="view" data-view-panel="redundancies">
+          <section class="section-head">
+            <div><p class="eyebrow">Eficiência</p><h2>Redundâncias cross-sector</h2></div>
+            <p>Sobreposições priorizadas para consolidação de contratos.</p>
+          </section>
+          <div class="redundancy-grid" id="redundancyCards"></div>
+        </div>
+
+        <div class="view" data-view-panel="reimbursements">
+          <section class="section-head">
+            <div><p class="eyebrow">Shadow IT</p><h2>Reembolsos e gastos próprios</h2></div>
+            <p>Assinaturas que devem migrar para a governança corporativa.</p>
+          </section>
+          <div class="reimbursement-grid" id="reimbursementCards"></div>
+          <article class="card clara-card"><h3>Registros da Clara no período</h3><p id="claraReimbursements"></p></article>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

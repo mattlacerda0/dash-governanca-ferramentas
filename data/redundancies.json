@@ -1,0 +1,23 @@
+[
+  {
+    "id": "tasks",
+    "category": "Gestão de tarefas",
+    "tools": ["Jira", "ClickUp"],
+    "areas": ["Product & Experience", "Marketing"],
+    "recommendation": "Consolidar o uso no Jira e negociar uma licença corporativa."
+  },
+  {
+    "id": "automation",
+    "category": "Automação de processos",
+    "tools": ["N8N", "Make"],
+    "areas": ["Technology", "Dados", "Marketing", "Comercial"],
+    "recommendation": "Migrar fluxos do Make para o N8N hospedado na infraestrutura existente."
+  },
+  {
+    "id": "whatsapp",
+    "category": "APIs de WhatsApp",
+    "tools": ["Wati", "Z-API", "PowerZap", "ChatGuru"],
+    "areas": ["Marketing", "Comercial", "Entrega"],
+    "recommendation": "Definir um provedor oficial e eliminar contratos paralelos."
+  }
+]

@@ -1,0 +1,41 @@
+{
+  "companyTotals": {
+    "tools": 85,
+    "redundantTools": 41,
+    "sectorVolumes": {
+      "Marketing": 38,
+      "Product & Experience": 23,
+      "Comercial": 14,
+      "Entrega": 12,
+      "Experiência": 9,
+      "Tech & Infra": 8,
+      "RH": 5,
+      "Financeiro": 4
+    }
+  },
+  "tools": [
+    {"id":"aws","name":"AWS","sector":"Product & Experience","verticals":["Technology"],"owner":"Raphael","approver":"Ana Gazzo","monthlyCost":2750,"currency":"BRL","usedInPE":true,"redundant":false,"paidByEmployee":false,"aliases":["amazon web services","aws"]},
+    {"id":"cursor","name":"Cursor","sector":"Product & Experience","verticals":["Technology","Intelligence"],"owner":"Cadu","approver":"Ana Gazzo","monthlyCost":962.5,"currency":"BRL","usedInPE":true,"redundant":false,"paidByEmployee":false,"aliases":["cursor"]},
+    {"id":"jira","name":"Jira","sector":"Product & Experience","verticals":["Technology","Intelligence","Product"],"owner":"Matheus","approver":"Ana Gazzo","monthlyCost":605,"currency":"BRL","usedInPE":true,"redundant":true,"paidByEmployee":false,"opportunity":"Unificar a gestão de tarefas com o ClickUp.","aliases":["atlassian","jira"]},
+    {"id":"n8n","name":"N8N","sector":"Product & Experience","verticals":["Technology","Intelligence"],"owner":"Raphael","approver":"Ana Gazzo","monthlyCost":550,"currency":"BRL","usedInPE":true,"redundant":true,"paidByEmployee":false,"opportunity":"Migrar automações do Make para N8N.","aliases":["n8n"]},
+    {"id":"slack","name":"Slack","sector":"Product & Experience","verticals":["Technology","Operations","Product","CX","CM","Gestão"],"owner":"Bruna","approver":"Ana Gazzo","monthlyCost":500,"currency":"BRL","usedInPE":true,"redundant":false,"paidByEmployee":false,"aliases":["slack"]},
+    {"id":"figma","name":"Figma","sector":"Product & Experience","verticals":["Intelligence","Operations","Product","Architecture","Design"],"owner":"Adriano","approver":"Ana Gazzo","monthlyCost":400,"currency":"BRL","usedInPE":true,"redundant":false,"paidByEmployee":false,"aliases":["figma"]},
+    {"id":"claude","name":"Claude AI","sector":"Product & Experience","verticals":["Intelligence","Operations","Product","Architecture","Design"],"owner":"Adriano, Thássya e Bruna","approver":"Ana Gazzo","monthlyCost":325,"currency":"BRL","usedInPE":true,"redundant":false,"paidByEmployee":true,"opportunity":"Centralizar licenças em contrato corporativo.","aliases":["anthropic","claude"]},
+    {"id":"pluggly","name":"Pluggly","sector":"Product & Experience","verticals":["Technology","Product"],"owner":"Cadu","approver":"Ana Gazzo","monthlyCost":250,"currency":"BRL","usedInPE":true,"redundant":false,"paidByEmployee":false,"aliases":["pluggly"]},
+    {"id":"github","name":"GitHub","sector":"Product & Experience","verticals":["Technology","Intelligence"],"owner":"Raphael","approver":"Ana Gazzo","monthlyCost":200,"currency":"BRL","usedInPE":true,"redundant":false,"paidByEmployee":false,"aliases":["github"]},
+    {"id":"adobe","name":"Pacote Adobe","sector":"Product & Experience","verticals":["Architecture","Design"],"owner":"Adriano","approver":"Ana Gazzo","monthlyCost":150,"currency":"BRL","usedInPE":true,"redundant":true,"paidByEmployee":true,"opportunity":"Migrar para licença corporativa compartilhada.","aliases":["adobe"]},
+    {"id":"pro-access","name":"Acessos PRO","sector":"Product & Experience","verticals":["Architecture","Design"],"owner":"Adriano","approver":"Ana Gazzo","monthlyCost":150,"currency":"BRL","usedInPE":true,"redundant":false,"paidByEmployee":true,"opportunity":"Catalogar e contratar pela empresa.","aliases":["pro access","acessos pro"]},
+    {"id":"typeform","name":"Typeform","sector":"Product & Experience","verticals":["Design","CX","CM"],"owner":"Bruna","approver":"Ana Gazzo","monthlyCost":150,"currency":"BRL","usedInPE":true,"redundant":true,"paidByEmployee":false,"opportunity":"Comparar uso com formulários do Google Workspace.","aliases":["typeform"]},
+    {"id":"calendly","name":"Calendly","sector":"Product & Experience","verticals":["Intelligence","Operations","Product","CX"],"owner":"Bruna","approver":"Ana Gazzo","monthlyCost":120,"currency":"BRL","usedInPE":true,"redundant":true,"paidByEmployee":false,"opportunity":"Avaliar agenda corporativa unificada.","aliases":["calendly"]},
+    {"id":"supabase","name":"Supabase","sector":"Product & Experience","verticals":["Technology","Intelligence"],"owner":"Raphael","approver":"Ana Gazzo","monthlyCost":110,"currency":"BRL","usedInPE":true,"redundant":true,"paidByEmployee":false,"opportunity":"Consolidar projetos e planos por organização.","aliases":["supabase"]},
+    {"id":"mobbin","name":"Mobbin","sector":"Product & Experience","verticals":["Architecture","Design"],"owner":"Adriano","approver":"Ana Gazzo","monthlyCost":66.67,"currency":"BRL","usedInPE":true,"redundant":false,"paidByEmployee":true,"opportunity":"Reembolsar ou adotar assinatura corporativa.","aliases":["mobbin"]},
+    {"id":"firebase","name":"Firebase","sector":"Product & Experience","verticals":["Technology","Intelligence"],"owner":"Raphael","approver":"Ana Gazzo","monthlyCost":0,"currency":"BRL","usedInPE":true,"redundant":true,"paidByEmployee":false,"opportunity":"Definir fronteira de uso com Supabase.","aliases":["firebase","google cloud"]},
+    {"id":"analytics","name":"Google Analytics","sector":"Product & Experience","verticals":["Technology","Product","CX"],"owner":"Matheus","approver":"Ana Gazzo","monthlyCost":0,"currency":"BRL","usedInPE":true,"redundant":false,"paidByEmployee":false,"aliases":["google analytics"]},
+    {"id":"gemini","name":"Gemini","sector":"Product & Experience","verticals":["Technology","Intelligence","Operations","Product","Architecture","Design"],"owner":"Cadu","approver":"Ana Gazzo","monthlyCost":0,"currency":"BRL","usedInPE":true,"redundant":true,"paidByEmployee":false,"opportunity":"Revisar sobreposição com Claude e ChatGPT.","aliases":["gemini"]},
+    {"id":"expo","name":"Expo","sector":"Product & Experience","verticals":["Technology","Intelligence"],"owner":"Raphael","approver":"Ana Gazzo","monthlyCost":0,"currency":"BRL","usedInPE":true,"redundant":false,"paidByEmployee":false,"aliases":["expo"]},
+    {"id":"vercel","name":"Vercel","sector":"Product & Experience","verticals":["Technology","Intelligence"],"owner":"Raphael","approver":"Ana Gazzo","monthlyCost":0,"currency":"BRL","usedInPE":true,"redundant":true,"paidByEmployee":false,"opportunity":"Consolidar contas e projetos.","aliases":["vercel"]},
+    {"id":"manus","name":"Manus AI","sector":"Product & Experience","verticals":["Intelligence","Architecture","Design"],"owner":"Adriano","approver":"Ana Gazzo","monthlyCost":0,"currency":"BRL","usedInPE":true,"redundant":true,"paidByEmployee":false,"opportunity":"Revisar sobreposição no portfólio de IA.","aliases":["manus"]},
+    {"id":"lovable","name":"Lovable","sector":"Product & Experience","verticals":["Technology","Architecture","Design"],"owner":"Adriano","approver":"Ana Gazzo","monthlyCost":0,"currency":"BRL","usedInPE":true,"redundant":true,"paidByEmployee":false,"opportunity":"Definir casos de uso frente ao Cursor.","aliases":["lovable"]},
+    {"id":"chatgpt","name":"ChatGPT","sector":"Product & Experience","verticals":["Operations","Product","CX","CM","Gestão"],"owner":"Bruna","approver":"Ana Gazzo","monthlyCost":0,"currency":"BRL","usedInPE":true,"redundant":true,"paidByEmployee":false,"opportunity":"Centralizar governança de IA generativa.","aliases":["openai","chatgpt"]}
+  ]
+}

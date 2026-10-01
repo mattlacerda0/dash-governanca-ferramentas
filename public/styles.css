@@ -59,6 +59,7 @@ h3 { margin-bottom: 5px; font-size: 16px; letter-spacing: 0; }
 .nav-item.is-active { border-color: var(--primary); background: var(--sidebar-raised); color: var(--surface); }
 .nav-item.is-active span { color: var(--primary); }
 .main { width: 100%; max-width: 1600px; min-width: 0; padding: 34px clamp(22px, 3.3vw, 54px) 68px; }
+.hidden { display: none !important; }
 .topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 28px; margin-bottom: 26px; }
 .eyebrow { margin-bottom: 7px; color: var(--primary); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
 .subtitle, .section-head > p, .card-head > p, .filter-note { color: var(--muted); }
@@ -137,6 +138,18 @@ select, input { width: 100%; min-height: 40px; border: 1px solid var(--border); 
 .vertical-card .expand-tools { margin-top: 8px; }
 .count-pill { color: var(--primary); font: 700 12px var(--font-heading); }
 .table-card { margin-bottom: 38px; padding: 22px; }
+.form-card { margin-bottom: 18px; padding: 20px; }
+.form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.form-grid label { display: grid; gap: 7px; color: var(--muted); font-size: 12px; }
+.form-grid input, .form-grid select, .form-grid textarea { width: 100%; min-height: 40px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--background); color: var(--foreground); font: 14px var(--font-body); padding: 8px 10px; }
+.form-grid textarea { min-height: 88px; resize: vertical; }
+.form-wide { grid-column: 1 / -1; }
+.form-actions { display: flex; align-items: end; gap: 10px; grid-column: 1 / -1; }
+.login-gate { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; background: rgba(10, 10, 10, .58); }
+.login-panel { width: min(440px, 100%); padding: 32px; border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow-soft); }
+.login-panel h1 { margin-top: 18px; font-size: 30px; }
+.login-panel p:not(.eyebrow) { color: var(--muted); }
+.login-message { min-height: 20px; margin-top: 14px; color: var(--primary) !important; }
 .table-toolbar { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 16px; }
 .local-hint { margin-bottom: 3px; color: var(--primary); font: 700 10px var(--font-heading); letter-spacing: .08em; text-transform: uppercase; }
 .search-label { width: min(360px, 100%); }
@@ -207,6 +220,10 @@ select, input { width: 100%; min-height: 40px; border: 1px solid var(--border); 
   .legend { width: 100%; }
   .bar-row { grid-template-columns: minmax(84px, 118px) minmax(70px, 1fr) 58px; font-size: 12px; }
   .table-toolbar { display: block; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-wide, .form-actions { grid-column: auto; }
+  .form-actions { align-items: stretch; flex-direction: column; }
+  .form-actions .btn { width: 100%; }
   .search-label { width: 100%; margin-top: 14px; }
   .reimbursement-card { align-items: flex-start; flex-direction: column; }
 }

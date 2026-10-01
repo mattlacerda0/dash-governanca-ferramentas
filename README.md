@@ -72,6 +72,25 @@ O refresh token deve ter somente o escopo `drive.readonly`. Quando essas três
 variáveis estão preenchidas, o dashboard prioriza sua conta pessoal e não usa
 as variáveis de conta de serviço.
 
+## Supabase e governança operacional
+
+O catálogo de ferramentas, uso por área, rateio e solicitações de reembolso
+usam o projeto Business Data no schema `_dashboard_ferramentas`. Antes do
+primeiro deploy, aplique [sql/001_dashboard_ferramentas.sql](sql/001_dashboard_ferramentas.sql)
+no SQL Editor desse projeto.
+
+Configure somente no ambiente do servidor:
+
+- `TOOLS_SUPABASE_URL=https://rckpuebaiswrxzmywllv.supabase.co`
+- `TOOLS_SUPABASE_ANON_KEY` para o login corporativo no navegador
+- `TOOLS_SUPABASE_SERVICE_ROLE_KEY` para as APIs, a migration e a sincronização
+- `TOOLS_SUPABASE_SCHEMA=_dashboard_ferramentas`
+- `TOOLS_CRON_SECRET` como segredo usado pela Vercel no endpoint diário
+
+O cron em `vercel.json` executa a sincronização diária às 05:00 UTC. A chave de
+serviço nunca deve ser exposta no navegador, no Git ou em variáveis `PUBLIC_*`.
+O primeiro administrador definido pela migration é `matheuslacerda@quartavia.com.br`.
+
 ## Testes
 
 ```bash

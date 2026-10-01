@@ -1,4 +1,4 @@
-const state = { payload: null, view: "overview", search: "", costExpanded: false, expandedVerticals: new Set() };
+const state = { payload: null, view: "overview", search: "", costExpanded: false, expandedVerticals: new Set(), session: null, authConfig: null, catalog: null };
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -124,15 +124,32 @@ function renderMonthlyChart(data) {
   </svg>`;
 }
 
-function renderVerticals(payload) {
-  $("#verticalCards").innerHTML = payload.verticals.map((vertical) => {
-    const tools = payload.tools.filter((tool) => tool.verticals.includes(vertical));
+function renderVerticals(payload, selector = "#verticalCards", allowedToolNames = null) {
+  $(selector).innerHTML = payload.verticals.map((vertical) => {
+    const tools = payload.tools.filter((tool) => tool.verticals.includes(vertical) && (!allowedToolNames || allowedToolNames.has(normalizeName(tool.name))));
+    if (allowedToolNames && !tools.length) return "";
     const expanded = state.expandedVerticals.has(vertical);
     const visibleTools = expanded ? tools : tools.slice(0, 6);
     return `<article class="card vertical-card"><header><strong>${escapeHtml(vertical)}</strong><span class="count-pill">${tools.length}</span></header>
       ${tools.length ? `<ul class="vertical-tools${expanded ? " is-expanded" : ""}">${visibleTools.map((tool) => `<li>${escapeHtml(tool.name)}</li>`).join("")}</ul>${tools.length > 6 ? `<button class="expand-tools" type="button" data-expand-vertical="${escapeHtml(vertical)}" aria-expanded="${String(expanded)}">${expanded ? "Mostrar menos" : `+ ${tools.length - 6} ferramentas`}</button>` : ""}` : '<p class="areas">Sem ferramentas neste recorte.</p>'}
     </article>`;
-  }).join("");
+  }).filter(Boolean).join("") || '<div class="empty">Sem dado informado.</div>';
+}
+
+function normalizeName(value) {
+  return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function productExperienceToolNames(payload) {
+  const catalog = state.catalog;
+  if (!catalog) return null;
+  const area = catalog.areas.find((item) => item.name === "Product & Experience");
+  if (!area) return new Set();
+  const { start, end } = payload.filters.range;
+  const activeIds = new Set(catalog.periods.filter((item) => item.area_id === area.id
+    && item.starts_on <= String(end).slice(0, 10) && (!item.ends_on || item.ends_on >= String(start).slice(0, 10)))
+    .map((item) => item.tool_id));
+  return new Set(catalog.tools.filter((item) => activeIds.has(item.id)).map((item) => item.normalized_name));
 }
 
 function renderTable() {
@@ -163,15 +180,10 @@ function renderRedundancies(payload) {
 }
 
 function renderReimbursements(payload) {
-  $("#reimbursementCards").innerHTML = payload.reimbursements.length ? payload.reimbursements.map((tool) => `<article class="card reimbursement-card">
-    <div><h3>${escapeHtml(tool.name)}</h3><p>${escapeHtml(tool.owner)} · ${money.format(tool.estimatedBrl)}/mês</p></div>
-    <span class="badge danger">Pago pelo colaborador</span>
-  </article>`).join("") : '<div class="empty">Nenhuma ferramenta paga por colaborador neste recorte.</div>';
-  $("#claraReimbursements").textContent = payload.source === "google-drive"
-    ? "Sem dado informado. Os arquivos atuais não identificam reembolsos individualmente."
-    : payload.source.includes("clara")
-    ? `${number.format(payload.claraReimbursements.length)} reembolsos retornados pela Clara no período selecionado.`
-    : "Integração não configurada ou temporariamente indisponível. O inventário seed permanece visível.";
+  if (!state.session) return;
+  refreshReimbursements().catch(() => {
+    $("#reimbursementCards").innerHTML = payload.reimbursements.length ? payload.reimbursements.map((tool) => `<article class="card reimbursement-card"><div><h3>${escapeHtml(tool.name)}</h3><p>${money.format(tool.estimatedBrl)}/mês</p></div></article>`).join("") : '<div class="empty">Sem solicitações no momento.</div>';
+  });
 }
 
 function render(payload) {
@@ -181,14 +193,15 @@ function render(payload) {
   renderCostChart(payload.charts.costShare);
   renderBars($("#sectorChart"), payload.charts.sectorVolume);
   renderMonthlyChart(payload.charts.monthly);
-  renderVerticals(payload);
+  renderVerticals(payload, "#overviewVerticalCards");
+  renderVerticals(payload, "#verticalCards", productExperienceToolNames(payload));
   renderTable();
   renderRedundancies(payload);
   renderReimbursements(payload);
   const sourcePill = $("#sourcePill");
-  sourcePill.textContent = payload.source === "google-drive" ? "Google Drive" : payload.source === "clara+seed" ? "Clara + inventário" : "Inventário seed";
-  sourcePill.classList.toggle("is-live", payload.source === "clara+seed" || payload.source === "google-drive");
-  sourcePill.classList.toggle("is-seed", payload.source !== "clara+seed" && payload.source !== "google-drive");
+  sourcePill.textContent = payload.source === "supabase+drive" ? "Supabase + Drive" : payload.source === "google-drive" ? "Google Drive" : payload.source === "clara+seed" ? "Clara + inventário" : "Inventário seed";
+  sourcePill.classList.toggle("is-live", payload.source === "clara+seed" || payload.source === "google-drive" || payload.source === "supabase+drive");
+  sourcePill.classList.toggle("is-seed", payload.source !== "clara+seed" && payload.source !== "google-drive" && payload.source !== "supabase+drive");
   $("#warning").textContent = payload.warning || "";
   $("#warning").classList.toggle("hidden", !payload.warning);
   $("#status").classList.add("hidden");
@@ -228,11 +241,87 @@ function switchView(view) {
     overview: ["Governança de ferramentas", "Custos, stack e eficiência operacional em uma visão única."],
     pe: ["Product & Experience", "Responsáveis, verticais e custos sob governança."],
     redundancies: ["Redundâncias cross-sector", "Oportunidades de unificação de contratos e licenças."],
-    reimbursements: ["Reembolsos & Shadow IT", "Assinaturas custeadas por colaboradores e registros Clara."],
+    reimbursements: ["Solicitar reembolso", "Registre uma despesa para análise administrativa."],
+    approvals: ["Aprovar reembolsos", "Fila de solicitações pendentes e decisões registradas."],
+    catalog: ["Cadastro de ferramentas", "Classificações e tipos para a governança da stack."],
+    usage: ["Uso por área", "Histórico de usuários ativos por ferramenta e área."],
   };
   [$("#pageTitle").textContent, $("#pageSubtitle").textContent] = titles[view];
   $("#sidebar").classList.remove("is-open");
   $("#menuButton").setAttribute("aria-expanded", "false");
+}
+
+function authHeaders() {
+  return state.session?.token ? { Authorization: `Bearer ${state.session.token}` } : {};
+}
+
+async function toolsApi(path, options = {}) {
+  const response = await fetch(path, { ...options, headers: { "Content-Type": "application/json", ...authHeaders(), ...(options.headers || {}) } });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || `HTTP ${response.status}`);
+  return payload;
+}
+
+function renderCatalog() {
+  const catalog = state.catalog;
+  if (!catalog) return;
+  const categoryOptions = ['<option value="">Sem categoria</option>', ...catalog.categories.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`)].join("");
+  $("#catalogCategory").innerHTML = categoryOptions;
+  const toolOptions = ['<option value="">Selecione</option>', ...catalog.tools.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`)].join("");
+  $("#usageTool").innerHTML = toolOptions;
+  $("#reimbursementTool").innerHTML = ['<option value="">Selecione</option>', ...catalog.tools.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`)].join("");
+  $("#usageArea").innerHTML = ['<option value="">Selecione</option>', ...catalog.areas.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`)].join("");
+  const categories = new Map(catalog.categories.map((item) => [item.id, item.name]));
+  $("#catalogTable").innerHTML = catalog.tools.map((item) => `<tr><td>${escapeHtml(item.name)}</td><td>${item.tool_type === "structural" ? "Estruturante" : "Opcional"}</td><td>${escapeHtml(categories.get(item.functional_category_id) || "Sem dado informado")}</td></tr>`).join("") || '<tr><td colspan="3">Sem dado informado.</td></tr>';
+  const tools = new Map(catalog.tools.map((item) => [item.id, item.name]));
+  const areas = new Map(catalog.areas.map((item) => [item.id, item.name]));
+  $("#usageTable").innerHTML = catalog.periods.map((item) => `<tr><td>${escapeHtml(tools.get(item.tool_id) || "")}</td><td>${escapeHtml(areas.get(item.area_id) || "")}</td><td class="num">${number.format(item.users_count)}</td><td>${escapeHtml(item.starts_on)}</td><td>${escapeHtml(item.ends_on || "Em uso")}</td></tr>`).join("") || '<tr><td colspan="5">Sem período cadastrado.</td></tr>';
+}
+
+function renderReimbursementRequests(items, selector, approval = false) {
+  $(selector).innerHTML = items.map((item) => `<article class="card reimbursement-card"><div><h3>${escapeHtml(item.tool_name)}</h3><p>${money.format(Number(item.amount))} · ${escapeHtml(item.expense_date)}</p><p>${escapeHtml(item.justification)}</p>${approval ? `<small>${escapeHtml(item.requester_email)}</small>` : `<small>${escapeHtml(item.status)}</small>`}</div>${approval && item.status === "pending" ? `<div class="decision-actions"><button class="btn btn-primary" data-decision="approved" data-request-id="${escapeHtml(item.id)}">Aprovar</button><button class="btn btn-secondary" data-decision="rejected" data-request-id="${escapeHtml(item.id)}">Recusar</button></div>` : ""}</article>`).join("") || '<div class="empty">Sem solicitações no momento.</div>';
+}
+
+async function refreshCatalog() {
+  state.catalog = await toolsApi("/api/catalog");
+  renderCatalog();
+  if (state.payload) renderVerticals(state.payload, "#verticalCards", productExperienceToolNames(state.payload));
+}
+
+async function refreshReimbursements() {
+  const items = await toolsApi("/api/reimbursements");
+  renderReimbursementRequests(items, "#reimbursementCards");
+  if (state.session?.isAdmin) renderReimbursementRequests(items, "#approvalCards", true);
+}
+
+function setLoginMessage(message) { $("#loginMessage").textContent = message || ""; }
+
+async function initializeAuth() {
+  state.authConfig = await fetch("/api/auth-config").then((response) => response.json());
+  const params = new URLSearchParams(location.hash.replace(/^#/, ""));
+  const callbackToken = params.get("access_token");
+  if (callbackToken) {
+    localStorage.setItem("qv-tools-token", callbackToken);
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+  const token = localStorage.getItem("qv-tools-token");
+  if (!token) { $("#loginGate").classList.remove("hidden"); return false; }
+  try {
+    const session = await fetch("/api/session", { headers: { Authorization: `Bearer ${token}` } }).then(async (response) => {
+      const body = await response.json(); if (!response.ok) throw new Error(body.error); return body;
+    });
+    state.session = { ...session, token };
+    $("#loginGate").classList.add("hidden");
+    $$(".admin-only").forEach((item) => item.classList.toggle("hidden", !session.isAdmin));
+    await refreshCatalog();
+    await refreshReimbursements();
+    return true;
+  } catch (error) {
+    localStorage.removeItem("qv-tools-token");
+    $("#loginGate").classList.remove("hidden");
+    setLoginMessage(error.message || "Não foi possível validar o acesso.");
+    return false;
+  }
 }
 
 function exportCsv() {
@@ -262,6 +351,43 @@ $("#monthFilter").addEventListener("change", load);
 $("#verticalFilter").addEventListener("change", load);
 $("#tableSearch").addEventListener("input", (event) => { state.search = event.target.value; renderTable(); });
 $("#exportButton").addEventListener("click", exportCsv);
+$("#logoutButton").addEventListener("click", () => { localStorage.removeItem("qv-tools-token"); state.session = null; $("#loginGate").classList.remove("hidden"); });
+$("#loginButton").addEventListener("click", () => {
+  const config = state.authConfig;
+  if (!config?.supabaseUrl || !config?.anonKey) { setLoginMessage("Autenticação corporativa ainda não configurada."); return; }
+  const redirect = `${location.origin}${location.pathname}`;
+  location.assign(`${config.supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirect)}`);
+});
+$("#catalogForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  try {
+    await toolsApi("/api/catalog", { method: "POST", body: JSON.stringify({ name: $("#catalogToolName").value, toolType: $("#catalogToolType").value, functionalCategoryId: $("#catalogCategory").value || null }) });
+    event.currentTarget.reset(); await refreshCatalog();
+  } catch (error) { alert(error.message); }
+});
+$("#newAreaButton").addEventListener("click", async () => {
+  try { await toolsApi("/api/areas", { method: "POST", body: JSON.stringify({ name: $("#newAreaName").value }) }); $("#newAreaName").value = ""; await refreshCatalog(); }
+  catch (error) { alert(error.message); }
+});
+$("#usageForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  try {
+    await toolsApi("/api/usage", { method: "POST", body: JSON.stringify({ toolId: $("#usageTool").value, areaId: $("#usageArea").value, usersCount: $("#usageUsers").value, startsOn: $("#usageStart").value, endsOn: $("#usageEnd").value || null }) });
+    event.currentTarget.reset(); await refreshCatalog();
+  } catch (error) { alert(error.message); }
+});
+$("#syncButton").addEventListener("click", async () => {
+  try { await toolsApi("/api/sync", { method: "POST", body: "{}" }); await refreshCatalog(); await load(); }
+  catch (error) { alert(error.message); }
+});
+$("#reimbursementForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const tool = state.catalog?.tools.find((item) => item.id === $("#reimbursementTool").value);
+  try {
+    await toolsApi("/api/reimbursements", { method: "POST", body: JSON.stringify({ toolId: tool?.id || null, toolName: $("#reimbursementToolName").value || tool?.name, amount: $("#reimbursementAmount").value, expenseDate: $("#reimbursementDate").value, justification: $("#reimbursementJustification").value }) });
+    event.currentTarget.reset(); await refreshReimbursements();
+  } catch (error) { alert(error.message); }
+});
 document.addEventListener("click", (event) => {
   const costToggle = event.target.closest("[data-expand-cost]");
   if (costToggle) {
@@ -275,5 +401,14 @@ document.addEventListener("click", (event) => {
   if (state.expandedVerticals.has(vertical)) state.expandedVerticals.delete(vertical);
   else state.expandedVerticals.add(vertical);
   renderVerticals(state.payload);
+  if (event.target.matches("[data-decision]")) return;
 });
-load();
+document.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-decision]");
+  if (!button) return;
+  const comment = window.prompt(button.dataset.decision === "approved" ? "Comentário da aprovação (opcional):" : "Motivo da recusa (opcional):") || "";
+  try { await toolsApi("/api/reimbursement-decision", { method: "PATCH", body: JSON.stringify({ id: button.dataset.requestId, status: button.dataset.decision, comment }) }); await refreshReimbursements(); }
+  catch (error) { alert(error.message); }
+});
+
+initializeAuth().then((authenticated) => { if (authenticated) load(); }).catch((error) => { $("#loginGate").classList.remove("hidden"); setLoginMessage(error.message || "Não foi possível preparar a autenticação."); });

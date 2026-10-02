@@ -39,7 +39,7 @@ const server = createServer(async (req, res) => {
   }
   const toolsResource = {
     "/api/auth-config": "auth-config", "/api/session": "session", "/api/catalog": "catalog", "/api/areas": "areas", "/api/categories": "categories",
-    "/api/usage": "usage", "/api/access": "access", "/api/reimbursements": "reimbursements", "/api/reimbursement-decision": "reimbursement-decision", "/api/sync": "sync",
+    "/api/usage": "usage", "/api/usage-template": "usage-template", "/api/usage-import": "usage-import", "/api/access": "access", "/api/reimbursements": "reimbursements", "/api/reimbursement-decision": "reimbursement-decision", "/api/sync": "sync",
   }[url.pathname];
   if (toolsResource) {
     await handleToolsApi(req, res, toolsResource);

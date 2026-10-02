@@ -107,7 +107,7 @@
 
         <div class="view" data-view-panel="reimbursements">
           <section class="section-head">
-            <div><p class="eyebrow">Reembolso</p><h2>Solicitar reembolso</h2></div>
+            <div><p class="eyebrow">Reembolso</p><h2>Solicitar reembolso</h2><button class="btn btn-secondary tutorial-trigger" type="button" data-start-tutorial="reimbursements">Iniciar tutorial</button></div>
             <p>Registre uma despesa de ferramenta para análise administrativa.</p>
           </section>
           <article class="card form-card"><form id="reimbursementForm" class="form-grid">
@@ -122,7 +122,7 @@
         </div>
 
         <div class="view" data-view-panel="approvals">
-          <section class="section-head"><div><p class="eyebrow">Administração</p><h2>Aprovar reembolsos</h2></div><p>Decisões ficam registradas com responsável e data.</p></section>
+          <section class="section-head"><div><p class="eyebrow">Administração</p><h2>Aprovar reembolsos</h2><button class="btn btn-secondary tutorial-trigger" type="button" data-start-tutorial="approvals">Iniciar tutorial</button></div><p>Decisões ficam registradas com responsável e data.</p></section>
           <div class="approval-kpis" id="approvalKpis"></div>
           <section class="section-head approval-section-head"><div><p class="eyebrow">Acompanhamento</p><h3>Gestão de reembolsos</h3></div><p>Distribuição, volume, ferramentas e velocidade de decisão no período selecionado.</p></section>
           <div class="chart-grid approval-chart-grid">
@@ -138,7 +138,7 @@
         </div>
 
         <div class="view" data-view-panel="catalog">
-          <section class="section-head"><div><p class="eyebrow">Administração</p><h2>Cadastro de ferramentas</h2></div><p>Classifique a ferramenta e mantenha sua funcionalidade principal.</p></section>
+          <section class="section-head"><div><p class="eyebrow">Administração</p><h2>Cadastro de ferramentas</h2><button class="btn btn-secondary tutorial-trigger" type="button" data-start-tutorial="catalog">Iniciar tutorial</button></div><p>Classifique a ferramenta e mantenha sua funcionalidade principal.</p></section>
           <article class="card form-card"><form id="catalogForm" class="form-grid">
             <label>Nome da ferramenta<input id="catalogToolName" required maxlength="160"></label>
             <label>Tipo<select id="catalogToolType"><option value="estruturante">Estruturante</option><option value="opcional">Opcional</option></select></label>
@@ -154,7 +154,8 @@
         </div>
 
         <div class="view" data-view-panel="usage">
-          <section class="section-head"><div><p class="eyebrow">Administração</p><h2>Uso por área</h2></div><p>Selecione uma ferramenta para incluir, editar ou remover períodos de uso por área.</p></section>
+          <section class="section-head"><div><p class="eyebrow">Administração</p><h2>Uso por área</h2><button class="btn btn-secondary tutorial-trigger" type="button" data-start-tutorial="usage">Iniciar tutorial</button></div><p>Selecione uma ferramenta para incluir, editar ou remover períodos de uso por área.</p></section>
+          <article class="card form-card" id="usageImportForm"><div class="form-heading"><p class="eyebrow">Carga em massa</p><h3>Importar uso por área</h3></div><div class="import-actions"><button class="btn btn-secondary" id="usageTemplateButton" type="button">Baixar modelo</button><label class="file-label">Planilha preenchida<input id="usageImportFile" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label><button class="btn btn-primary" id="usageImportButton" type="button">Importar planilha</button></div><p class="table-count" id="usageImportResult" role="status"></p></article>
           <article class="card table-card usage-tools-card"><div class="table-toolbar"><div><p class="local-hint">Catálogo completo</p><h3>Ferramentas cadastradas</h3></div><p class="table-count" id="usageToolCount"></p></div><div class="table-wrap"><table class="qv-table gd-table management-table"><thead><tr><th>Ferramenta</th><th>Áreas em uso</th><th class="actions-cell">Ação</th></tr></thead><tbody id="usageToolsTable"></tbody></table></div></article>
           <article class="card form-card"><form id="usageForm" class="form-grid">
             <div class="form-wide form-heading"><p class="eyebrow">Período de uso</p><h3 id="usageFormTitle">Cadastrar período</h3></div>
@@ -170,7 +171,7 @@
         </div>
 
         <div class="view" data-view-panel="access">
-          <section class="section-head"><div><p class="eyebrow">Administração</p><h2>Gestão de acesso</h2></div><p>Defina quem pode administrar a governança, aprovar reembolsos e sincronizar dados.</p></section>
+          <section class="section-head"><div><p class="eyebrow">Administração</p><h2>Gestão de acesso</h2><button class="btn btn-secondary tutorial-trigger" type="button" data-start-tutorial="access">Iniciar tutorial</button></div><p>Defina quem pode administrar a governança, aprovar reembolsos e sincronizar dados.</p></section>
           <article class="card form-card"><form id="accessForm" class="form-grid">
             <label>E-mail corporativo<input id="administratorEmail" type="email" autocomplete="email" placeholder="nome@quartavia.com.br" required></label>
             <div class="form-actions"><button class="btn btn-primary" type="submit">Adicionar administrador</button></div>
@@ -180,6 +181,9 @@
       </section>
     </main>
   </div>
+  <section class="tutorial-overlay hidden" id="tutorialOverlay" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle" aria-describedby="tutorialDescription">
+    <div class="tutorial-panel"><p class="eyebrow" id="tutorialProgress"></p><h2 id="tutorialTitle"></h2><p id="tutorialDescription"></p><div class="tutorial-actions"><button class="btn btn-secondary" id="tutorialClose" type="button">Encerrar</button><button class="btn btn-secondary" id="tutorialPrevious" type="button">Voltar</button><button class="btn btn-primary" id="tutorialNext" type="button">Próximo</button></div></div>
+  </section>
   <section class="login-gate" id="loginGate" aria-live="polite"><div class="login-panel"><span class="brand-mark">QV</span><p class="eyebrow">Governança operacional</p><h1>Acesse com sua conta corporativa</h1><p>Os dados financeiros e as solicitações de reembolso exigem autenticação.</p><button class="btn btn-primary" id="loginButton">Entrar com Google</button><p class="login-message" id="loginMessage"></p></div></section>
   <script type="module" src="/app.js"></script>
 </body>

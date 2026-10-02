@@ -1,6 +1,6 @@
 import { reimbursementMetrics } from "./reimbursement-metrics.js";
 
-const state = { payload: null, view: "overview", search: "", costExpanded: false, expandedVerticals: new Set(), session: null, authConfig: null, catalog: null, reimbursementItems: [], approvalReimbursementItems: [], administrators: [], selectedUsageToolId: null, editingUsagePeriodId: null };
+const state = { payload: null, view: "overview", search: "", costExpanded: false, expandedVerticals: new Set(), session: null, authConfig: null, catalog: null, reimbursementItems: [], approvalReimbursementItems: [], administrators: [], selectedUsageToolId: null, editingUsagePeriodId: null, tutorial: null };
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -261,8 +261,99 @@ function authHeaders() {
 async function toolsApi(path, options = {}) {
   const response = await fetch(path, { ...options, headers: { "Content-Type": "application/json", ...authHeaders(), ...(options.headers || {}) } });
   const payload = await response.json();
-  if (!response.ok) throw new Error(payload.error || `HTTP ${response.status}`);
+  if (!response.ok) throw new Error(payload.error || payload.errors?.join(" ") || `HTTP ${response.status}`);
   return payload;
+}
+
+async function downloadUsageTemplate() {
+  const response = await fetch("/api/usage-template", { headers: authHeaders() });
+  if (!response.ok) {
+    const payload = await response.json();
+    throw new Error(payload.error || `HTTP ${response.status}`);
+  }
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(await response.blob());
+  link.download = "uso-por-area-modelo.xlsx";
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function fileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(String(reader.result || "").split(",").pop()));
+    reader.addEventListener("error", () => reject(new Error("Não foi possível ler a planilha.")));
+    reader.readAsDataURL(file);
+  });
+}
+
+const TUTORIALS = {
+  reimbursements: [
+    ["Registrar uma solicitação", "Selecione uma ferramenta cadastrada ou informe outra, preencha valor, data e justificativa para enviar à análise.", "#reimbursementForm"],
+    ["Acompanhar suas solicitações", "Esta tabela mostra somente suas solicitações, inclusive as que ainda aguardam decisão.", ".reimbursement-table-card"],
+  ],
+  approvals: [
+    ["Acompanhar a carteira", "Os indicadores e gráficos resumem o volume, os valores e a velocidade das decisões no período selecionado.", "#approvalKpis"],
+    ["Decidir pendências", "Cada cartão pendente permite aprovar ou recusar a solicitação e registrar um comentário administrativo.", "#approvalCards"],
+    ["Consultar decisões", "A tabela mantém o histórico de solicitações aprovadas e recusadas, com responsável e data da decisão.", "#approvalHistoryTable"],
+  ],
+  catalog: [
+    ["Cadastrar ferramenta", "Inclua ferramentas novas, defina se são estruturantes ou opcionais e escolha a funcionalidade principal.", "#catalogForm"],
+    ["Cadastrar funcionalidade", "Crie novas classificações para reutilizar no catálogo de ferramentas.", "#categoryForm"],
+    ["Manter o catálogo", "A tabela permite ajustar o tipo e a funcionalidade principal das ferramentas existentes.", "#catalogTable"],
+  ],
+  usage: [
+    ["Importar em massa", "Baixe o modelo, complete as áreas, usuários e períodos. Áreas novas serão criadas automaticamente após a validação completa.", "#usageImportForm"],
+    ["Selecionar ferramenta", "Use esta tabela para abrir a edição de uso de qualquer ferramenta cadastrada.", "#usageToolsTable"],
+    ["Registrar um período", "Cadastre ou edite a área, número de usuários e o intervalo de uso. Pausas devem ser registros separados.", "#usageForm"],
+    ["Revisar histórico", "Confira, altere ou exclua os períodos da ferramenta selecionada.", "#usageTable"],
+  ],
+  access: [
+    ["Adicionar administrador", "Informe um e-mail corporativo para liberar a gestão do dashboard, aprovações e sincronização.", "#accessForm"],
+    ["Revisar acessos", "A tabela lista os administradores. Seu próprio acesso e o último administrador permanecem protegidos contra remoção.", "#accessTable"],
+  ],
+};
+
+function clearTutorialTarget() { document.querySelector(".is-tutorial-target")?.classList.remove("is-tutorial-target"); }
+
+function renderTutorialStep() {
+  const tutorial = state.tutorial;
+  if (!tutorial) return;
+  clearTutorialTarget();
+  const [title, description, selector] = TUTORIALS[tutorial.name][tutorial.index];
+  const target = $(selector);
+  target?.scrollIntoView({ behavior: "smooth", block: "center" });
+  target?.classList.add("is-tutorial-target");
+  $("#tutorialProgress").textContent = `Passo ${tutorial.index + 1} de ${TUTORIALS[tutorial.name].length}`;
+  $("#tutorialTitle").textContent = title;
+  $("#tutorialDescription").textContent = description;
+  $("#tutorialPrevious").classList.toggle("hidden", tutorial.index === 0);
+  $("#tutorialNext").textContent = tutorial.index === TUTORIALS[tutorial.name].length - 1 ? "Concluir" : "Próximo";
+  $("#tutorialNext").focus();
+}
+
+function startTutorial(name, trigger) {
+  if (!TUTORIALS[name]) return;
+  state.tutorial = { name, index: 0, trigger };
+  $("#tutorialOverlay").classList.remove("hidden");
+  renderTutorialStep();
+}
+
+function closeTutorial() {
+  const trigger = state.tutorial?.trigger;
+  clearTutorialTarget();
+  state.tutorial = null;
+  $("#tutorialOverlay").classList.add("hidden");
+  trigger?.focus();
+}
+
+function moveTutorial(direction) {
+  if (!state.tutorial) return;
+  const next = state.tutorial.index + direction;
+  if (next < 0) return;
+  if (next >= TUTORIALS[state.tutorial.name].length) { closeTutorial(); return; }
+  state.tutorial.index = next;
+  renderTutorialStep();
 }
 
 function renderCatalog() {
@@ -480,6 +571,21 @@ $("#usageForm").addEventListener("submit", async (event) => {
   } catch (error) { alert(error.message); }
 });
 $("#cancelUsageEdit").addEventListener("click", resetUsageEditor);
+$("#usageTemplateButton").addEventListener("click", async () => {
+  try { await downloadUsageTemplate(); }
+  catch (error) { alert(error.message); }
+});
+$("#usageImportButton").addEventListener("click", async () => {
+  const file = $("#usageImportFile").files?.[0];
+  if (!file) { $("#usageImportResult").textContent = "Selecione uma planilha .xlsx para importar."; return; }
+  if (!/\.xlsx$/i.test(file.name)) { $("#usageImportResult").textContent = "Envie um arquivo no formato .xlsx."; return; }
+  try {
+    const result = await toolsApi("/api/usage-import", { method: "POST", body: JSON.stringify({ file: await fileAsBase64(file) }) });
+    $("#usageImportFile").value = "";
+    $("#usageImportResult").textContent = `${number.format(result.tools)} ferramenta(s), ${number.format(result.areasCreated)} área(s) criada(s) e ${number.format(result.periodsCreated)} período(s) incluído(s).`;
+    await refreshCatalog();
+  } catch (error) { $("#usageImportResult").textContent = error.message; }
+});
 $("#syncButton").addEventListener("click", async () => {
   try { await toolsApi("/api/sync", { method: "POST", body: "{}" }); await refreshCatalog(); await load(); }
   catch (error) { alert(error.message); }
@@ -501,6 +607,20 @@ $("#accessForm").addEventListener("submit", async (event) => {
     form.reset();
     await refreshAdministrators();
   } catch (error) { alert(error.message); }
+});
+$$('[data-start-tutorial]').forEach((button) => button.addEventListener("click", () => startTutorial(button.dataset.startTutorial, button)));
+$("#tutorialClose").addEventListener("click", closeTutorial);
+$("#tutorialPrevious").addEventListener("click", () => moveTutorial(-1));
+$("#tutorialNext").addEventListener("click", () => moveTutorial(1));
+window.addEventListener("keydown", (event) => {
+  if (!state.tutorial) return;
+  if (event.key === "Escape") { event.preventDefault(); closeTutorial(); return; }
+  if (event.key !== "Tab") return;
+  const controls = $$("#tutorialOverlay button:not(.hidden)");
+  const first = controls[0];
+  const last = controls[controls.length - 1];
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
 });
 document.addEventListener("click", (event) => {
   const costToggle = event.target.closest("[data-expand-cost]");

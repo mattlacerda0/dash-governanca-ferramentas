@@ -4,126 +4,126 @@
 create schema if not exists _dashboard_ferramentas;
 create extension if not exists btree_gist;
 
-create table if not exists _dashboard_ferramentas.tool_functional_categories (
+create table if not exists _dashboard_ferramentas.categorias_funcionais (
   id uuid primary key default gen_random_uuid(),
-  name text not null unique,
-  created_at timestamptz not null default now()
+  nome text not null unique,
+  criado_em timestamptz not null default now()
 );
 
 create table if not exists _dashboard_ferramentas.areas (
   id uuid primary key default gen_random_uuid(),
-  name text not null unique,
-  created_at timestamptz not null default now()
+  nome text not null unique,
+  criado_em timestamptz not null default now()
 );
 
-create table if not exists _dashboard_ferramentas.tools (
+create table if not exists _dashboard_ferramentas.ferramentas (
   id uuid primary key default gen_random_uuid(),
-  normalized_name text not null unique,
-  name text not null,
-  functional_category_id uuid references _dashboard_ferramentas.tool_functional_categories(id),
-  tool_type text not null default 'optional' check (tool_type in ('structural', 'optional')),
-  category_source text not null default 'import' check (category_source in ('import', 'manual')),
-  active boolean not null default true,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  nome_normalizado text not null unique,
+  nome text not null,
+  categoria_funcional_id uuid references _dashboard_ferramentas.categorias_funcionais(id),
+  tipo_ferramenta text not null default 'opcional' check (tipo_ferramenta in ('estruturante', 'opcional')),
+  origem_categoria text not null default 'importacao' check (origem_categoria in ('importacao', 'manual')),
+  ativo boolean not null default true,
+  criado_em timestamptz not null default now(),
+  atualizado_em timestamptz not null default now()
 );
 
-create table if not exists _dashboard_ferramentas.tool_area_usage_periods (
+create table if not exists _dashboard_ferramentas.periodos_uso_ferramenta_area (
   id uuid primary key default gen_random_uuid(),
-  tool_id uuid not null references _dashboard_ferramentas.tools(id) on delete cascade,
+  ferramenta_id uuid not null references _dashboard_ferramentas.ferramentas(id) on delete cascade,
   area_id uuid not null references _dashboard_ferramentas.areas(id) on delete restrict,
-  users_count integer not null check (users_count > 0),
-  starts_on date not null,
-  ends_on date,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  check (ends_on is null or ends_on >= starts_on),
+  quantidade_usuarios integer not null check (quantidade_usuarios > 0),
+  data_inicio date not null,
+  data_fim date,
+  criado_em timestamptz not null default now(),
+  atualizado_em timestamptz not null default now(),
+  check (data_fim is null or data_fim >= data_inicio),
   exclude using gist (
-    tool_id with =,
+    ferramenta_id with =,
     area_id with =,
-    daterange(starts_on, coalesce(ends_on + 1, 'infinity'::date), '[)') with &&
+    daterange(data_inicio, coalesce(data_fim + 1, 'infinity'::date), '[)') with &&
   )
 );
 
-create table if not exists _dashboard_ferramentas.user_roles (
+create table if not exists _dashboard_ferramentas.perfis_acesso (
   id uuid primary key default gen_random_uuid(),
   email text not null unique,
-  role text not null check (role in ('admin', 'member')),
-  created_at timestamptz not null default now()
+  perfil text not null check (perfil in ('administrador', 'membro')),
+  criado_em timestamptz not null default now()
 );
 
-insert into _dashboard_ferramentas.areas(name) values ('Product & Experience') on conflict (name) do nothing;
-insert into _dashboard_ferramentas.user_roles(email, role)
-values ('matheuslacerda@quartavia.com.br', 'admin')
-on conflict (email) do update set role = excluded.role;
+insert into _dashboard_ferramentas.areas(nome) values ('Product & Experience') on conflict (nome) do nothing;
+insert into _dashboard_ferramentas.perfis_acesso(email, perfil)
+values ('matheuslacerda@quartavia.com.br', 'administrador')
+on conflict (email) do update set perfil = excluded.perfil;
 
-create table if not exists _dashboard_ferramentas.drive_files (
+create table if not exists _dashboard_ferramentas.arquivos_drive (
   id uuid primary key default gen_random_uuid(),
-  drive_file_id text not null unique,
-  name text not null,
-  modified_at timestamptz,
-  imported_at timestamptz not null default now()
+  arquivo_drive_id text not null unique,
+  nome text not null,
+  modificado_em timestamptz,
+  importado_em timestamptz not null default now()
 );
 
-create table if not exists _dashboard_ferramentas.financial_entries (
+create table if not exists _dashboard_ferramentas.lancamentos_financeiros (
   id uuid primary key default gen_random_uuid(),
-  fingerprint text not null unique,
-  tool_id uuid not null references _dashboard_ferramentas.tools(id),
-  drive_file_id text references _dashboard_ferramentas.drive_files(drive_file_id),
-  supplier text not null,
-  amount numeric(14,2) not null check (amount >= 0),
-  occurred_on date not null,
-  status text,
-  note text,
-  included_at text,
-  included_by text,
-  created_at timestamptz not null default now()
+  chave_deduplicacao text not null unique,
+  ferramenta_id uuid not null references _dashboard_ferramentas.ferramentas(id),
+  arquivo_drive_id text references _dashboard_ferramentas.arquivos_drive(arquivo_drive_id),
+  fornecedor text not null,
+  valor numeric(14,2) not null check (valor >= 0),
+  data_lancamento date not null,
+  situacao text,
+  observacao text,
+  incluido_em text,
+  incluido_por text,
+  criado_em timestamptz not null default now()
 );
 
-create table if not exists _dashboard_ferramentas.reimbursement_requests (
+create table if not exists _dashboard_ferramentas.solicitacoes_reembolso (
   id uuid primary key default gen_random_uuid(),
-  requester_id uuid not null,
-  requester_email text not null,
-  tool_id uuid references _dashboard_ferramentas.tools(id),
-  tool_name text not null,
-  amount numeric(14,2) not null check (amount > 0),
-  expense_date date not null,
-  justification text not null,
-  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
-  decision_comment text,
-  decided_by uuid,
-  decided_by_email text,
-  decided_at timestamptz,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  solicitante_id uuid not null,
+  solicitante_email text not null,
+  ferramenta_id uuid references _dashboard_ferramentas.ferramentas(id),
+  ferramenta_nome text not null,
+  valor numeric(14,2) not null check (valor > 0),
+  data_despesa date not null,
+  justificativa text not null,
+  situacao text not null default 'pendente' check (situacao in ('pendente', 'aprovado', 'recusado')),
+  comentario_decisao text,
+  decidido_por uuid,
+  decisor_email text,
+  decidido_em timestamptz,
+  criado_em timestamptz not null default now(),
+  atualizado_em timestamptz not null default now()
 );
 
-create index if not exists financial_entries_tool_date_idx on _dashboard_ferramentas.financial_entries(tool_id, occurred_on);
-create index if not exists usage_periods_tool_area_idx on _dashboard_ferramentas.tool_area_usage_periods(tool_id, area_id, starts_on);
-create index if not exists reimbursements_status_created_idx on _dashboard_ferramentas.reimbursement_requests(status, created_at desc);
+create index if not exists lancamentos_financeiros_ferramenta_data_idx on _dashboard_ferramentas.lancamentos_financeiros(ferramenta_id, data_lancamento);
+create index if not exists periodos_uso_ferramenta_area_idx on _dashboard_ferramentas.periodos_uso_ferramenta_area(ferramenta_id, area_id, data_inicio);
+create index if not exists solicitacoes_reembolso_situacao_criado_idx on _dashboard_ferramentas.solicitacoes_reembolso(situacao, criado_em desc);
 
-create or replace function _dashboard_ferramentas.touch_updated_at()
+create or replace function _dashboard_ferramentas.atualizar_data_modificacao()
 returns trigger language plpgsql set search_path = '' as $$
-begin new.updated_at = now(); return new; end;
+begin new.atualizado_em = now(); return new; end;
 $$;
 
-drop trigger if exists tools_touch_updated_at on _dashboard_ferramentas.tools;
-create trigger tools_touch_updated_at before update on _dashboard_ferramentas.tools for each row execute function _dashboard_ferramentas.touch_updated_at();
-drop trigger if exists usage_periods_touch_updated_at on _dashboard_ferramentas.tool_area_usage_periods;
-create trigger usage_periods_touch_updated_at before update on _dashboard_ferramentas.tool_area_usage_periods for each row execute function _dashboard_ferramentas.touch_updated_at();
-drop trigger if exists reimbursement_touch_updated_at on _dashboard_ferramentas.reimbursement_requests;
-create trigger reimbursement_touch_updated_at before update on _dashboard_ferramentas.reimbursement_requests for each row execute function _dashboard_ferramentas.touch_updated_at();
+drop trigger if exists ferramentas_atualizar_modificacao on _dashboard_ferramentas.ferramentas;
+create trigger ferramentas_atualizar_modificacao before update on _dashboard_ferramentas.ferramentas for each row execute function _dashboard_ferramentas.atualizar_data_modificacao();
+drop trigger if exists periodos_uso_atualizar_modificacao on _dashboard_ferramentas.periodos_uso_ferramenta_area;
+create trigger periodos_uso_atualizar_modificacao before update on _dashboard_ferramentas.periodos_uso_ferramenta_area for each row execute function _dashboard_ferramentas.atualizar_data_modificacao();
+drop trigger if exists solicitacoes_reembolso_atualizar_modificacao on _dashboard_ferramentas.solicitacoes_reembolso;
+create trigger solicitacoes_reembolso_atualizar_modificacao before update on _dashboard_ferramentas.solicitacoes_reembolso for each row execute function _dashboard_ferramentas.atualizar_data_modificacao();
 
 revoke all on schema _dashboard_ferramentas from public, anon, authenticated;
 grant usage on schema _dashboard_ferramentas to service_role;
 grant all on all tables in schema _dashboard_ferramentas to service_role;
 grant usage, select on all sequences in schema _dashboard_ferramentas to service_role;
 
-alter table _dashboard_ferramentas.tool_functional_categories enable row level security;
+alter table _dashboard_ferramentas.categorias_funcionais enable row level security;
 alter table _dashboard_ferramentas.areas enable row level security;
-alter table _dashboard_ferramentas.tools enable row level security;
-alter table _dashboard_ferramentas.tool_area_usage_periods enable row level security;
-alter table _dashboard_ferramentas.user_roles enable row level security;
-alter table _dashboard_ferramentas.drive_files enable row level security;
-alter table _dashboard_ferramentas.financial_entries enable row level security;
-alter table _dashboard_ferramentas.reimbursement_requests enable row level security;
+alter table _dashboard_ferramentas.ferramentas enable row level security;
+alter table _dashboard_ferramentas.periodos_uso_ferramenta_area enable row level security;
+alter table _dashboard_ferramentas.perfis_acesso enable row level security;
+alter table _dashboard_ferramentas.arquivos_drive enable row level security;
+alter table _dashboard_ferramentas.lancamentos_financeiros enable row level security;
+alter table _dashboard_ferramentas.solicitacoes_reembolso enable row level security;

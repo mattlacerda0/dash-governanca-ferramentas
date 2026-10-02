@@ -143,13 +143,13 @@ function normalizeName(value) {
 function productExperienceToolNames(payload) {
   const catalog = state.catalog;
   if (!catalog) return null;
-  const area = catalog.areas.find((item) => item.name === "Product & Experience");
+  const area = catalog.areas.find((item) => item.nome === "Product & Experience");
   if (!area) return new Set();
   const { start, end } = payload.filters.range;
   const activeIds = new Set(catalog.periods.filter((item) => item.area_id === area.id
-    && item.starts_on <= String(end).slice(0, 10) && (!item.ends_on || item.ends_on >= String(start).slice(0, 10)))
-    .map((item) => item.tool_id));
-  return new Set(catalog.tools.filter((item) => activeIds.has(item.id)).map((item) => item.normalized_name));
+    && item.data_inicio <= String(end).slice(0, 10) && (!item.data_fim || item.data_fim >= String(start).slice(0, 10)))
+    .map((item) => item.ferramenta_id));
+  return new Set(catalog.tools.filter((item) => activeIds.has(item.id)).map((item) => item.nome_normalizado));
 }
 
 function renderTable() {
@@ -265,21 +265,21 @@ async function toolsApi(path, options = {}) {
 function renderCatalog() {
   const catalog = state.catalog;
   if (!catalog) return;
-  const categoryOptions = ['<option value="">Sem categoria</option>', ...catalog.categories.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`)].join("");
+  const categoryOptions = ['<option value="">Sem categoria</option>', ...catalog.categories.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.nome)}</option>`)].join("");
   $("#catalogCategory").innerHTML = categoryOptions;
-  const toolOptions = ['<option value="">Selecione</option>', ...catalog.tools.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`)].join("");
+  const toolOptions = ['<option value="">Selecione</option>', ...catalog.tools.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.nome)}</option>`)].join("");
   $("#usageTool").innerHTML = toolOptions;
-  $("#reimbursementTool").innerHTML = ['<option value="">Selecione</option>', ...catalog.tools.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`)].join("");
-  $("#usageArea").innerHTML = ['<option value="">Selecione</option>', ...catalog.areas.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`)].join("");
-  const categories = new Map(catalog.categories.map((item) => [item.id, item.name]));
-  $("#catalogTable").innerHTML = catalog.tools.map((item) => `<tr><td>${escapeHtml(item.name)}</td><td>${item.tool_type === "structural" ? "Estruturante" : "Opcional"}</td><td>${escapeHtml(categories.get(item.functional_category_id) || "Sem dado informado")}</td></tr>`).join("") || '<tr><td colspan="3">Sem dado informado.</td></tr>';
-  const tools = new Map(catalog.tools.map((item) => [item.id, item.name]));
-  const areas = new Map(catalog.areas.map((item) => [item.id, item.name]));
-  $("#usageTable").innerHTML = catalog.periods.map((item) => `<tr><td>${escapeHtml(tools.get(item.tool_id) || "")}</td><td>${escapeHtml(areas.get(item.area_id) || "")}</td><td class="num">${number.format(item.users_count)}</td><td>${escapeHtml(item.starts_on)}</td><td>${escapeHtml(item.ends_on || "Em uso")}</td></tr>`).join("") || '<tr><td colspan="5">Sem período cadastrado.</td></tr>';
+  $("#reimbursementTool").innerHTML = ['<option value="">Selecione</option>', ...catalog.tools.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.nome)}</option>`)].join("");
+  $("#usageArea").innerHTML = ['<option value="">Selecione</option>', ...catalog.areas.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.nome)}</option>`)].join("");
+  const categories = new Map(catalog.categories.map((item) => [item.id, item.nome]));
+  $("#catalogTable").innerHTML = catalog.tools.map((item) => `<tr><td>${escapeHtml(item.nome)}</td><td>${item.tipo_ferramenta === "estruturante" ? "Estruturante" : "Opcional"}</td><td>${escapeHtml(categories.get(item.categoria_funcional_id) || "Sem dado informado")}</td></tr>`).join("") || '<tr><td colspan="3">Sem dado informado.</td></tr>';
+  const tools = new Map(catalog.tools.map((item) => [item.id, item.nome]));
+  const areas = new Map(catalog.areas.map((item) => [item.id, item.nome]));
+  $("#usageTable").innerHTML = catalog.periods.map((item) => `<tr><td>${escapeHtml(tools.get(item.ferramenta_id) || "")}</td><td>${escapeHtml(areas.get(item.area_id) || "")}</td><td class="num">${number.format(item.quantidade_usuarios)}</td><td>${escapeHtml(item.data_inicio)}</td><td>${escapeHtml(item.data_fim || "Em uso")}</td></tr>`).join("") || '<tr><td colspan="5">Sem período cadastrado.</td></tr>';
 }
 
 function renderReimbursementRequests(items, selector, approval = false) {
-  $(selector).innerHTML = items.map((item) => `<article class="card reimbursement-card"><div><h3>${escapeHtml(item.tool_name)}</h3><p>${money.format(Number(item.amount))} · ${escapeHtml(item.expense_date)}</p><p>${escapeHtml(item.justification)}</p>${approval ? `<small>${escapeHtml(item.requester_email)}</small>` : `<small>${escapeHtml(item.status)}</small>`}</div>${approval && item.status === "pending" ? `<div class="decision-actions"><button class="btn btn-primary" data-decision="approved" data-request-id="${escapeHtml(item.id)}">Aprovar</button><button class="btn btn-secondary" data-decision="rejected" data-request-id="${escapeHtml(item.id)}">Recusar</button></div>` : ""}</article>`).join("") || '<div class="empty">Sem solicitações no momento.</div>';
+  $(selector).innerHTML = items.map((item) => `<article class="card reimbursement-card"><div><h3>${escapeHtml(item.ferramenta_nome)}</h3><p>${money.format(Number(item.valor))} · ${escapeHtml(item.data_despesa)}</p><p>${escapeHtml(item.justificativa)}</p>${approval ? `<small>${escapeHtml(item.solicitante_email)}</small>` : `<small>${escapeHtml(item.situacao)}</small>`}</div>${approval && item.situacao === "pendente" ? `<div class="decision-actions"><button class="btn btn-primary" data-decision="aprovado" data-request-id="${escapeHtml(item.id)}">Aprovar</button><button class="btn btn-secondary" data-decision="recusado" data-request-id="${escapeHtml(item.id)}">Recusar</button></div>` : ""}</article>`).join("") || '<div class="empty">Sem solicitações no momento.</div>';
 }
 
 async function refreshCatalog() {
@@ -366,7 +366,7 @@ $("#catalogForm").addEventListener("submit", async (event) => {
   } catch (error) { alert(error.message); }
 });
 $("#newAreaButton").addEventListener("click", async () => {
-  try { await toolsApi("/api/areas", { method: "POST", body: JSON.stringify({ name: $("#newAreaName").value }) }); $("#newAreaName").value = ""; await refreshCatalog(); }
+  try { await toolsApi("/api/areas", { method: "POST", body: JSON.stringify({ nome: $("#newAreaName").value }) }); $("#newAreaName").value = ""; await refreshCatalog(); }
   catch (error) { alert(error.message); }
 });
 $("#usageForm").addEventListener("submit", async (event) => {
@@ -384,7 +384,7 @@ $("#reimbursementForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const tool = state.catalog?.tools.find((item) => item.id === $("#reimbursementTool").value);
   try {
-    await toolsApi("/api/reimbursements", { method: "POST", body: JSON.stringify({ toolId: tool?.id || null, toolName: $("#reimbursementToolName").value || tool?.name, amount: $("#reimbursementAmount").value, expenseDate: $("#reimbursementDate").value, justification: $("#reimbursementJustification").value }) });
+    await toolsApi("/api/reimbursements", { method: "POST", body: JSON.stringify({ toolId: tool?.id || null, toolName: $("#reimbursementToolName").value || tool?.nome, amount: $("#reimbursementAmount").value, expenseDate: $("#reimbursementDate").value, justification: $("#reimbursementJustification").value }) });
     event.currentTarget.reset(); await refreshReimbursements();
   } catch (error) { alert(error.message); }
 });
@@ -407,7 +407,7 @@ document.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-decision]");
   if (!button) return;
   const comment = window.prompt(button.dataset.decision === "approved" ? "Comentário da aprovação (opcional):" : "Motivo da recusa (opcional):") || "";
-  try { await toolsApi("/api/reimbursement-decision", { method: "PATCH", body: JSON.stringify({ id: button.dataset.requestId, status: button.dataset.decision, comment }) }); await refreshReimbursements(); }
+  try { await toolsApi("/api/reimbursement-decision", { method: "PATCH", body: JSON.stringify({ id: button.dataset.requestId, situacao: button.dataset.decision, comment }) }); await refreshReimbursements(); }
   catch (error) { alert(error.message); }
 });
 

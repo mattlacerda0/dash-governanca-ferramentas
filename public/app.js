@@ -1,4 +1,6 @@
-const state = { payload: null, view: "overview", search: "", costExpanded: false, expandedVerticals: new Set(), session: null, authConfig: null, catalog: null, selectedUsageToolId: null, editingUsagePeriodId: null };
+import { reimbursementMetrics } from "./reimbursement-metrics.mjs";
+
+const state = { payload: null, view: "overview", search: "", costExpanded: false, expandedVerticals: new Set(), session: null, authConfig: null, catalog: null, reimbursementItems: [], selectedUsageToolId: null, editingUsagePeriodId: null };
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -320,6 +322,37 @@ function renderReimbursementRequests(items, selector, approval = false) {
   $(selector).innerHTML = items.map((item) => `<article class="card reimbursement-card"><div><h3>${escapeHtml(item.ferramenta_nome)}</h3><p>${money.format(Number(item.valor))} · ${escapeHtml(item.data_despesa)}</p><p>${escapeHtml(item.justificativa)}</p>${approval ? `<small>${escapeHtml(item.solicitante_email)}</small>` : `<small>${escapeHtml(item.situacao)}</small>`}</div>${approval && item.situacao === "pendente" ? `<div class="decision-actions"><button class="btn btn-primary" data-decision="aprovado" data-request-id="${escapeHtml(item.id)}">Aprovar</button><button class="btn btn-secondary" data-decision="recusado" data-request-id="${escapeHtml(item.id)}">Recusar</button></div>` : ""}</article>`).join("") || '<div class="empty">Sem solicitações no momento.</div>';
 }
 
+function reimbursementFilters() {
+  return { year: $("#yearFilter").value, month: $("#monthFilter").value };
+}
+
+function statusLabel(status) {
+  return { pendente: "Pendente", aprovado: "Aprovado", recusado: "Recusado" }[status] || "Sem dado informado";
+}
+
+function formatDecisionTime(milliseconds) {
+  if (!Number.isFinite(milliseconds)) return "Sem dado informado";
+  const hours = Math.round(milliseconds / 3600000);
+  return hours < 24 ? `${hours} h` : `${(hours / 24).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} dias`;
+}
+
+function renderApprovalDashboard(items) {
+  const metrics = reimbursementMetrics(items, reimbursementFilters());
+  const { status } = metrics;
+  $("#approvalKpis").innerHTML = [
+    kpi("Pendentes", number.format(status.pendente.count), money.format(status.pendente.value), "kpi-featured"),
+    kpi("Valor pendente", money.format(status.pendente.value), `${number.format(status.pendente.count)} solicitação(ões)`, "kpi-highlight"),
+    kpi("Taxa de decisão", valueOrMissing(metrics.decisionRate, percent.format), `${number.format(status.aprovado.count + status.recusado.count)} decisão(ões)`, "kpi-compact"),
+    kpi("Prazo médio", formatDecisionTime(metrics.averageDecisionMs), metrics.decidedCount ? `${number.format(metrics.decidedCount)} decisão(ões) analisadas` : "Sem dado informado", "kpi-compact"),
+  ].join("");
+  $("#approvalStatusChart").innerHTML = `<div class="status-summary">${["pendente", "aprovado", "recusado"].map((key) => `<div class="status-summary-row"><span class="badge ${key === "pendente" ? "neutral" : key === "aprovado" ? "success" : "danger"}">${statusLabel(key)}</span><strong>${number.format(status[key].count)}</strong><span>${money.format(status[key].value)}</span></div>`).join("")}</div>`;
+  renderBars($("#approvalMonthlyChart"), metrics.monthly.map((item) => ({ label: `${monthText(Number(item.month.slice(5, 7)))} · ${number.format(item.count)}`, value: item.value })), money.format);
+  renderBars($("#approvalToolsChart"), metrics.tools.slice(0, 8), money.format);
+  $("#approvalSlaChart").innerHTML = metrics.decidedCount ? `<div class="sla-metric"><strong>${formatDecisionTime(metrics.averageDecisionMs)}</strong><span>média de ${number.format(metrics.decidedCount)} decisão(ões) concluídas.</span></div>` : '<div class="empty">Sem dado informado.</div>';
+  renderReimbursementRequests(metrics.pending, "#approvalCards", true);
+  $("#approvalHistoryTable").innerHTML = metrics.completed.map((item) => `<tr><td>${escapeHtml(item.ferramenta_nome)}</td><td>${escapeHtml(item.solicitante_email)}</td><td class="num">${money.format(Number(item.valor))}</td><td>${escapeHtml(item.data_despesa)}</td><td><span class="badge ${item.situacao === "aprovado" ? "success" : "danger"}">${statusLabel(item.situacao)}</span></td><td>${escapeHtml(item.decidido_em ? new Date(item.decidido_em).toLocaleDateString("pt-BR") : "Sem dado informado")}</td><td>${escapeHtml(item.comentario_decisao || "Sem comentário")}</td></tr>`).join("") || '<tr><td colspan="7"><div class="empty">Sem decisões concluídas no período.</div></td></tr>';
+}
+
 async function refreshCatalog() {
   state.catalog = await toolsApi("/api/catalog");
   renderCatalog();
@@ -328,8 +361,9 @@ async function refreshCatalog() {
 
 async function refreshReimbursements() {
   const items = await toolsApi("/api/reimbursements");
+  state.reimbursementItems = items;
   renderReimbursementRequests(items, "#reimbursementCards");
-  if (state.session?.isAdmin) renderReimbursementRequests(items, "#approvalCards", true);
+  if (state.session?.isAdmin) renderApprovalDashboard(items);
 }
 
 function setLoginMessage(message) { $("#loginMessage").textContent = message || ""; }

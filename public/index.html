@@ -122,7 +122,18 @@
 
         <div class="view" data-view-panel="approvals">
           <section class="section-head"><div><p class="eyebrow">Administração</p><h2>Aprovar reembolsos</h2></div><p>Decisões ficam registradas com responsável e data.</p></section>
+          <div class="approval-kpis" id="approvalKpis"></div>
+          <section class="section-head approval-section-head"><div><p class="eyebrow">Acompanhamento</p><h3>Gestão de reembolsos</h3></div><p>Distribuição, volume, ferramentas e velocidade de decisão no período selecionado.</p></section>
+          <div class="chart-grid approval-chart-grid">
+            <article class="card chart-card approval-chart-card"><div class="card-head"><p class="eyebrow">Status</p><h3>Carteira de solicitações</h3><p>Quantidade e valor por situação.</p></div><div id="approvalStatusChart"></div></article>
+            <article class="card chart-card approval-chart-card"><div class="card-head"><p class="eyebrow">Evolução</p><h3>Solicitações por mês</h3><p>Valor e quantidade pela data da despesa.</p></div><div id="approvalMonthlyChart"></div></article>
+            <article class="card chart-card approval-chart-card"><div class="card-head"><p class="eyebrow">Ferramentas</p><h3>Maior valor solicitado</h3><p>Ranking das ferramentas no período.</p></div><div id="approvalToolsChart"></div></article>
+            <article class="card chart-card approval-chart-card"><div class="card-head"><p class="eyebrow">SLA</p><h3>Prazo médio de decisão</h3><p>Tempo entre solicitação e decisão.</p></div><div id="approvalSlaChart"></div></article>
+          </div>
+          <section class="section-head approval-section-head"><div><p class="eyebrow">Fila de aprovação</p><h3>Pendentes de decisão</h3></div><p>Solicitações que exigem uma ação administrativa.</p></section>
           <div class="reimbursement-grid" id="approvalCards"></div>
+          <section class="section-head approval-section-head"><div><p class="eyebrow">Histórico</p><h3>Decisões concluídas</h3></div><p>Solicitações aprovadas ou recusadas.</p></section>
+          <article class="card table-card"><div class="table-wrap"><table class="qv-table gd-table approval-history-table"><thead><tr><th>Ferramenta</th><th>Solicitante</th><th class="num">Valor</th><th>Data da despesa</th><th>Situação</th><th>Data da decisão</th><th>Comentário</th></tr></thead><tbody id="approvalHistoryTable"></tbody></table></div></article>
         </div>
 
         <div class="view" data-view-panel="catalog">

@@ -103,12 +103,15 @@ create index if not exists periodos_uso_ferramenta_area_idx on _dashboard_ferram
 create index if not exists solicitacoes_reembolso_situacao_criado_idx on _dashboard_ferramentas.solicitacoes_reembolso(situacao, criado_em desc);
 
 create or replace function _dashboard_ferramentas.atualizar_data_modificacao()
-returns trigger language plpgsql set search_path = '' as $$
+returns trigger
+as $atualizar_data_modificacao$
 begin
   new.atualizado_em := now();
   return new;
 end;
-$$;
+$atualizar_data_modificacao$
+language plpgsql
+set search_path = '';
 
 drop trigger if exists ferramentas_atualizar_modificacao on _dashboard_ferramentas.ferramentas;
 create trigger ferramentas_atualizar_modificacao before update on _dashboard_ferramentas.ferramentas for each row execute function _dashboard_ferramentas.atualizar_data_modificacao();

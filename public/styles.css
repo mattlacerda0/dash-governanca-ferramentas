@@ -151,12 +151,13 @@ select, input { width: 100%; min-height: 40px; border: 1px solid var(--border); 
 .import-actions { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; padding-top: 16px; }
 .file-label { display: grid; min-width: min(100%, 320px); gap: 6px; color: var(--muted); font-size: 12px; }
 .file-label input { background: var(--background); }
-.tutorial-overlay { position: fixed; inset: 0; z-index: 200; display: grid; align-items: end; justify-items: center; padding: 24px; background: rgb(10 10 10 / 68%); }
-.tutorial-panel { width: min(560px, 100%); padding: 24px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow-soft); }
+.tutorial-open .portal { margin-right: min(400px, 32vw); }
+.tutorial-overlay { position: fixed; inset: 0; z-index: 200; pointer-events: none; }
+.tutorial-panel { position: absolute; top: 0; right: 0; display: flex; width: min(400px, 32vw); height: 100%; flex-direction: column; padding: 32px; overflow-y: auto; border-left: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow-soft); pointer-events: auto; }
 .tutorial-panel h2 { margin-bottom: 10px; }
 .tutorial-panel > p:not(.eyebrow) { margin-bottom: 20px; color: var(--muted); }
-.tutorial-actions { display: flex; justify-content: flex-end; gap: 10px; }
-.is-tutorial-target { position: relative; z-index: 201; box-shadow: 0 0 0 4px var(--primary), 0 0 0 8px rgb(255 255 255 / 90%); pointer-events: none; }
+.tutorial-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: auto; padding-top: 24px; }
+.is-tutorial-target { position: relative; z-index: 21; box-shadow: 0 0 0 4px var(--primary), 0 0 0 8px rgb(255 255 255 / 90%); pointer-events: none; }
 .login-gate { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; background: rgba(10, 10, 10, .58); }
 .login-panel { width: min(440px, 100%); padding: 32px; border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow-soft); }
 .login-panel h1 { margin-top: 18px; font-size: 30px; }
@@ -227,9 +228,11 @@ select, input { width: 100%; min-height: 40px; border: 1px solid var(--border); 
 
 @media (max-width: 860px) {
   .portal { grid-template-columns: 1fr; }
+  .tutorial-open .portal { margin-right: 0; padding-bottom: min(52svh, 380px); }
   .sidebar { position: fixed; left: 0; width: 260px; transform: translateX(-100%); transition: transform .18s ease; box-shadow: var(--shadow-nav); }
   .sidebar.is-open { transform: translateX(0); }
   .main { padding-top: 22px; }
+  .tutorial-panel { top: auto; bottom: 0; width: 100%; height: auto; max-height: min(52svh, 380px); padding: 24px; border-top: 1px solid var(--border); border-left: 0; }
   .topbar { flex-wrap: wrap; gap: 14px; }
   .menu-button { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--foreground); font-weight: 700; }
   .topbar > div:nth-child(2) { flex: 1 1 300px; }

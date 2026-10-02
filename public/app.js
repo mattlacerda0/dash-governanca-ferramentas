@@ -322,7 +322,7 @@ function renderTutorialStep() {
   clearTutorialTarget();
   const [title, description, selector] = TUTORIALS[tutorial.name][tutorial.index];
   const target = $(selector);
-  target?.scrollIntoView({ behavior: "smooth", block: "center" });
+  target?.scrollIntoView({ behavior: "smooth", block: window.matchMedia("(max-width: 860px)").matches ? "start" : "nearest" });
   target?.classList.add("is-tutorial-target");
   $("#tutorialProgress").textContent = `Passo ${tutorial.index + 1} de ${TUTORIALS[tutorial.name].length}`;
   $("#tutorialTitle").textContent = title;
@@ -335,6 +335,7 @@ function renderTutorialStep() {
 function startTutorial(name, trigger) {
   if (!TUTORIALS[name]) return;
   state.tutorial = { name, index: 0, trigger };
+  document.body.classList.add("tutorial-open");
   $("#tutorialOverlay").classList.remove("hidden");
   renderTutorialStep();
 }
@@ -343,6 +344,7 @@ function closeTutorial() {
   const trigger = state.tutorial?.trigger;
   clearTutorialTarget();
   state.tutorial = null;
+  document.body.classList.remove("tutorial-open");
   $("#tutorialOverlay").classList.add("hidden");
   trigger?.focus();
 }

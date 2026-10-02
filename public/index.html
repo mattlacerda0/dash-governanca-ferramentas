@@ -69,10 +69,8 @@
             <div><p class="eyebrow">Visão geral</p><h2>Panorama da stack</h2></div>
             <p>Distribuição dos custos, volume por setor e evolução mensal.</p>
           </section>
-          <div class="chart-grid">
-            <article class="card chart-card"><div class="card-head"><p class="eyebrow">Custo estimado</p><p>Participação mensal por ferramenta.</p></div><div id="costChart"></div></article>
-            <article class="card chart-card"><div class="card-head"><p class="eyebrow">Inventário corporativo</p><h3>Ferramentas por setor</h3><p>Volume de contratos por área.</p></div><div id="sectorChart"></div></article>
-          </div>
+          <article class="card table-card cost-table-card"><div class="table-toolbar"><div><p class="eyebrow">Custo estimado</p><h3>Custos por ferramenta</h3><p class="table-count">Valores do período e usuários ativos no fim do recorte.</p></div></div><div class="table-wrap"><table class="qv-table gd-table tool-cost-table"><thead><tr><th>Nome da ferramenta</th><th>Funcionalidade</th><th class="num">Qtd. usuários</th><th class="num">Custo total</th><th class="num">Custo médio por usuário</th></tr></thead><tbody id="costTable"></tbody></table></div><p class="table-count" id="costTableCount"></p></article>
+          <article class="card chart-card functional-chart-card"><div class="card-head"><p class="eyebrow">Uso por área</p><h3>Ferramentas por funcionalidade</h3><p>Ferramentas com uso ativo por área no período selecionado.</p></div><div id="functionalChart"></div></article>
           <article class="card chart-card wide"><div class="card-head"><p class="eyebrow">Evolução</p><h3>Custo mensal e tamanho do time</h3><p>Relação entre custo e headcount P&E.</p></div><div id="monthlyChart"></div></article>
           <section class="section-head"><div><p class="eyebrow">Cobertura operacional</p><h2>Governança por vertical</h2></div><p>Ferramentas classificadas por funcionalidade principal.</p></section>
           <div class="vertical-grid" id="overviewVerticalCards"></div>
@@ -81,7 +79,7 @@
         <div class="view" data-view-panel="pe">
           <section class="section-head">
             <div><p class="eyebrow">Product & Experience</p><h2>Governança por vertical</h2></div>
-            <p>Inventário operacional das 23 ferramentas mapeadas.</p>
+            <p>Ferramentas com uso ativo na área Product &amp; Experience no período selecionado.</p>
           </section>
           <div class="vertical-grid" id="verticalCards"></div>
           <article class="card table-card">

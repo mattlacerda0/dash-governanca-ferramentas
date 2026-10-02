@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import {
+  applyUsageGovernance,
   aggregateClaraTransactions,
   buildDriveGovernancePayload,
   buildGovernancePayload,
@@ -180,6 +181,46 @@ test("dados consolidados do Drive filtram por ano e mês disponíveis", () => {
   assert.equal(payload.filters.month, 9);
   assert.equal(payload.kpis.monthlyEstimated, 20);
   assert.deepEqual(payload.availablePeriods, [{ year: 2026, months: Array.from({ length: 12 }, (_, index) => index + 1) }]);
+});
+
+test("uso por área define funcionalidade, usuários, custo médio e redundâncias cross-sector", () => {
+  const payload = buildDriveGovernancePayload({
+    records: [
+      { toolId: "jira", tool: "Jira", category: "Produtividade", amount: 300, date: new Date("2026-09-10T00:00:00Z") },
+      { toolId: "wrike", tool: "Wrike", category: "Produtividade", amount: 200, date: new Date("2026-09-10T00:00:00Z") },
+      { toolId: "claude", tool: "Claude", category: "Inteligência artificial", amount: 100, date: new Date("2026-09-10T00:00:00Z") },
+    ],
+    year: 2026,
+    month: 9,
+  });
+  const enriched = applyUsageGovernance(payload, {
+    categories: [{ id: "prod", nome: "Produtividade" }, { id: "ia", nome: "Inteligência artificial" }],
+    areas: [{ id: "marketing", nome: "Marketing" }, { id: "pe", nome: "Product & Experience" }, { id: "comercial", nome: "Comercial" }],
+    tools: [
+      { id: "tool-jira", nome: "Jira", nome_normalizado: "jira", categoria_funcional_id: "prod" },
+      { id: "tool-wrike", nome: "Wrike", nome_normalizado: "wrike", categoria_funcional_id: "prod" },
+      { id: "tool-claude", nome: "Claude", nome_normalizado: "claude", categoria_funcional_id: "ia" },
+    ],
+    periods: [
+      { ferramenta_id: "tool-jira", area_id: "marketing", quantidade_usuarios: 12, data_inicio: "2026-01-01", data_fim: null },
+      { ferramenta_id: "tool-wrike", area_id: "pe", quantidade_usuarios: 8, data_inicio: "2026-01-01", data_fim: null },
+      { ferramenta_id: "tool-claude", area_id: "comercial", quantidade_usuarios: 4, data_inicio: "2026-01-01", data_fim: null },
+    ],
+  });
+  assert.deepEqual(enriched.charts.functionalUsage, [
+    { label: "Produtividade", value: 2 },
+    { label: "Inteligência artificial", value: 1 },
+  ]);
+  const jira = enriched.tools.find((tool) => tool.name === "Jira");
+  assert.equal(jira.userCount, 12);
+  assert.equal(jira.totalCost, 300);
+  assert.equal(jira.averageCostPerUser, 25);
+  assert.deepEqual(enriched.crossAreaRedundancies, [{
+    category: "Produtividade",
+    tools: ["Jira", "Wrike"],
+    areas: ["Marketing", "Product & Experience"],
+    recommendation: "Avaliar consolidação da funcionalidade entre as áreas antes de renovar contratos ou ampliar licenças.",
+  }]);
 });
 
 test("datas do Excel preservam o mês informado no fuso local", () => {

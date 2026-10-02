@@ -1,6 +1,6 @@
 import { reimbursementMetrics } from "./reimbursement-metrics.js";
 
-const state = { payload: null, view: "overview", search: "", costExpanded: false, expandedVerticals: new Set(), session: null, authConfig: null, catalog: null, reimbursementItems: [], approvalReimbursementItems: [], administrators: [], selectedUsageToolId: null, editingUsagePeriodId: null, tutorial: null };
+const state = { payload: null, view: "overview", search: "", expandedVerticals: new Set(), session: null, authConfig: null, catalog: null, reimbursementItems: [], approvalReimbursementItems: [], administrators: [], selectedUsageToolId: null, editingUsagePeriodId: null, tutorial: null };
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -70,30 +70,16 @@ function renderBars(container, data, formatter = number.format) {
     </div>`).join("")}</div>`;
 }
 
-function renderCostChart(data) {
-  if (!data.length) {
-    $("#costChart").innerHTML = '<div class="empty">Sem dado informado.</div>';
-    return;
-  }
-  const collapsed = data.length > 7 && !state.costExpanded;
-  const grouped = collapsed
-    ? [...data.slice(0, 6), { label: "Outras", value: data.slice(6).reduce((sum, item) => sum + item.value, 0) }]
-    : data;
-  const total = grouped.reduce((sum, item) => sum + item.value, 0) || 1;
-  const colors = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)", "var(--chart-6)", "var(--color-subtle)"];
-  let cursor = 0;
-  const segments = grouped.map((item, index) => {
-    const start = cursor;
-    cursor += item.value / total * 100;
-    return `${colors[index % colors.length]} ${start}% ${cursor}%`;
-  });
-  $("#costChart").innerHTML = `<div class="donut-layout">
-    <div class="donut" style="background:conic-gradient(${segments.join(",")})" aria-label="Distribuição de custos"></div>
-    <div class="legend${state.costExpanded ? " is-expanded" : ""}">${grouped.map((item, index) => `<div class="legend-row">
-      <span class="legend-dot" style="background:${colors[index % colors.length]}"></span>
-      <span>${escapeHtml(item.label)}</span><strong>${money.format(item.value)}</strong>
-    </div>`).join("")}${data.length > 7 ? `<button class="expand-tools" type="button" data-expand-cost aria-expanded="${String(state.costExpanded)}">${state.costExpanded ? "Mostrar menos" : `+ ${data.length - 6} ferramentas`}</button>` : ""}</div>
-  </div>`;
+function renderCostTable(payload) {
+  const tools = [...(payload.tools || [])].sort((a, b) => (b.totalCost || 0) - (a.totalCost || 0) || a.name.localeCompare(b.name, "pt-BR"));
+  $("#costTable").innerHTML = tools.length ? tools.map((tool) => `<tr>
+    <td><strong>${escapeHtml(tool.name)}</strong></td>
+    <td>${escapeHtml(tool.functionalCategory || "Sem dado informado")}</td>
+    <td class="num">${valueOrMissing(tool.userCount, number.format)}</td>
+    <td class="num">${valueOrMissing(tool.totalCost, money.format)}</td>
+    <td class="num">${valueOrMissing(tool.averageCostPerUser, money.format)}</td>
+  </tr>`).join("") : '<tr><td colspan="5"><div class="empty">Sem dado informado.</div></td></tr>';
+  $("#costTableCount").textContent = tools.length ? `${number.format(tools.length)} ferramenta(s) no recorte.` : "Sem dado informado.";
 }
 
 function renderMonthlyChart(data) {
@@ -154,10 +140,11 @@ function productExperienceToolNames(payload) {
   return new Set(catalog.tools.filter((item) => activeIds.has(item.id)).map((item) => item.nome_normalizado));
 }
 
-function renderTable() {
+function renderTable(allowedToolNames = null) {
   const tools = state.payload?.tools || [];
   const query = state.search.trim().toLocaleLowerCase("pt-BR");
-  const filtered = tools.filter((tool) => !query || [
+  const scoped = allowedToolNames ? tools.filter((tool) => allowedToolNames.has(normalizeName(tool.name))) : tools;
+  const filtered = scoped.filter((tool) => !query || [
     tool.name, tool.owner, tool.approver, tool.opportunity, ...(tool.verticals || []),
   ].join(" ").toLocaleLowerCase("pt-BR").includes(query));
   $("#toolsTable").innerHTML = filtered.length ? filtered.map((tool) => `<tr>
@@ -169,7 +156,7 @@ function renderTable() {
     <td><span class="badge ${tool.redundant === true ? "danger" : tool.redundant === false ? "success" : ""}">${tool.redundant === true ? "Sim" : tool.redundant === false ? "Não" : "Sem dado informado"}</span></td>
     <td>${escapeHtml(tool.opportunity || "Sem dado informado")}</td>
   </tr>`).join("") : '<tr><td colspan="7"><div class="empty">Nenhuma ferramenta encontrada.</div></td></tr>';
-  $("#tableCount").textContent = `Exibindo ${filtered.length} de ${tools.length} ferramentas no recorte.`;
+  $("#tableCount").textContent = `Exibindo ${filtered.length} de ${scoped.length} ferramentas com uso ativo em Product & Experience.`;
 }
 
 function renderRedundancies(payload) {
@@ -192,13 +179,14 @@ function render(payload) {
   state.payload = payload;
   populateDateFilters(payload);
   renderKpis(payload);
-  renderCostChart(payload.charts.costShare);
-  renderBars($("#sectorChart"), payload.charts.sectorVolume);
+  renderCostTable(payload);
+  renderBars($("#functionalChart"), payload.charts.functionalUsage || []);
   renderMonthlyChart(payload.charts.monthly);
   renderVerticals(payload, "#overviewVerticalCards");
-  renderVerticals(payload, "#verticalCards", productExperienceToolNames(payload));
-  renderTable();
-  renderRedundancies(payload);
+  const productExperienceTools = productExperienceToolNames(payload);
+  renderVerticals(payload, "#verticalCards", productExperienceTools);
+  renderTable(productExperienceTools);
+  renderRedundancies({ ...payload, redundancies: payload.crossAreaRedundancies || [] });
   renderReimbursements(payload);
   const sourcePill = $("#sourcePill");
   sourcePill.textContent = payload.source === "supabase+drive" ? "Supabase + Drive" : payload.source === "google-drive" ? "Google Drive" : payload.source === "clara+seed" ? "Clara + inventário" : "Inventário seed";
@@ -211,7 +199,6 @@ function render(payload) {
 }
 
 async function load() {
-  state.costExpanded = false;
   state.expandedVerticals.clear();
   document.body.setAttribute("aria-busy", "true");
   $("#status").textContent = "Carregando dados de governança…";
@@ -458,7 +445,7 @@ function renderApprovalDashboard(items) {
 async function refreshCatalog() {
   state.catalog = await toolsApi("/api/catalog");
   renderCatalog();
-  if (state.payload) renderVerticals(state.payload, "#verticalCards", productExperienceToolNames(state.payload));
+  if (state.payload) render(state.payload);
 }
 
 async function refreshReimbursements() {
@@ -625,18 +612,13 @@ window.addEventListener("keydown", (event) => {
   else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
 });
 document.addEventListener("click", (event) => {
-  const costToggle = event.target.closest("[data-expand-cost]");
-  if (costToggle) {
-    state.costExpanded = !state.costExpanded;
-    renderCostChart(state.payload?.charts.costShare || []);
-    return;
-  }
   const verticalToggle = event.target.closest("[data-expand-vertical]");
   if (!verticalToggle) return;
   const vertical = verticalToggle.dataset.expandVertical;
   if (state.expandedVerticals.has(vertical)) state.expandedVerticals.delete(vertical);
   else state.expandedVerticals.add(vertical);
-  renderVerticals(state.payload);
+  renderVerticals(state.payload, "#overviewVerticalCards");
+  renderVerticals(state.payload, "#verticalCards", productExperienceToolNames(state.payload));
   if (event.target.matches("[data-decision]")) return;
 });
 document.addEventListener("click", async (event) => {

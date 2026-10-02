@@ -25,6 +25,7 @@
         <button class="nav-item admin-only hidden" data-view="approvals"><span>05</span> Aprovar reembolsos</button>
         <button class="nav-item admin-only hidden" data-view="catalog"><span>06</span> Cadastro de ferramentas</button>
         <button class="nav-item admin-only hidden" data-view="usage"><span>07</span> Uso por área</button>
+        <button class="nav-item admin-only hidden" data-view="access"><span>08</span> Gestão de acesso</button>
       </nav>
     </aside>
 
@@ -117,7 +118,7 @@
             <label class="form-wide">Justificativa<textarea id="reimbursementJustification" required maxlength="1000"></textarea></label>
             <div class="form-actions"><button class="btn btn-primary" type="submit">Enviar solicitação</button></div>
           </form></article>
-          <div class="reimbursement-grid" id="reimbursementCards"></div>
+          <article class="card table-card reimbursement-table-card"><div class="table-toolbar"><div><p class="local-hint">Minhas solicitações</p><h3>Acompanhamento de reembolsos</h3></div><p class="table-count">Somente solicitações registradas por você.</p></div><div class="table-wrap"><table class="qv-table gd-table reimbursement-history-table"><thead><tr><th>Ferramenta</th><th class="num">Valor</th><th>Data da despesa</th><th>Justificativa</th><th>Situação</th><th>Decisão</th></tr></thead><tbody id="reimbursementHistoryTable"></tbody></table></div></article>
         </div>
 
         <div class="view" data-view-panel="approvals">
@@ -166,6 +167,15 @@
             <div class="form-actions"><button class="btn btn-secondary" id="newAreaButton" type="button">Cadastrar área</button><button class="btn btn-secondary hidden" id="cancelUsageEdit" type="button">Cancelar edição</button><button class="btn btn-primary" id="usageSaveButton" type="submit">Salvar período</button></div>
           </form></article>
           <article class="card table-card"><div class="table-toolbar"><div><p class="local-hint">Ferramenta selecionada</p><h3 id="usagePeriodsTitle">Períodos cadastrados</h3></div></div><div class="table-wrap"><table class="qv-table gd-table management-table"><thead><tr><th>Área</th><th class="num">Usuários</th><th>Início</th><th>Fim</th><th class="actions-cell">Ações</th></tr></thead><tbody id="usageTable"></tbody></table></div></article>
+        </div>
+
+        <div class="view" data-view-panel="access">
+          <section class="section-head"><div><p class="eyebrow">Administração</p><h2>Gestão de acesso</h2></div><p>Defina quem pode administrar a governança, aprovar reembolsos e sincronizar dados.</p></section>
+          <article class="card form-card"><form id="accessForm" class="form-grid">
+            <label>E-mail corporativo<input id="administratorEmail" type="email" autocomplete="email" placeholder="nome@quartavia.com.br" required></label>
+            <div class="form-actions"><button class="btn btn-primary" type="submit">Adicionar administrador</button></div>
+          </form></article>
+          <article class="card table-card"><div class="table-wrap"><table class="qv-table gd-table access-table"><thead><tr><th>Administrador</th><th>Perfil</th><th>Incluído em</th><th class="actions-cell">Ação</th></tr></thead><tbody id="accessTable"></tbody></table></div></article>
         </div>
       </section>
     </main>

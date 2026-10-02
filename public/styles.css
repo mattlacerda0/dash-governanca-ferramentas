@@ -203,6 +203,9 @@ select, input { width: 100%; min-height: 40px; border: 1px solid var(--border); 
 .sla-metric strong { color: var(--primary); font-size: 34px; font-variant-numeric: tabular-nums; line-height: 1; }
 .sla-metric span { color: var(--muted); font-size: 13px; }
 .approval-history-table { min-width: 1120px; }
+.reimbursement-history-table { min-width: 980px; }
+.reimbursement-table-card { margin-bottom: 38px; }
+.access-table { min-width: 720px; }
 
 @media (max-width: 1180px) {
   .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }

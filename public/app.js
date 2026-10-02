@@ -1,6 +1,6 @@
 import { reimbursementMetrics } from "./reimbursement-metrics.js";
 
-const state = { payload: null, view: "overview", search: "", costExpanded: false, expandedVerticals: new Set(), session: null, authConfig: null, catalog: null, reimbursementItems: [], selectedUsageToolId: null, editingUsagePeriodId: null };
+const state = { payload: null, view: "overview", search: "", costExpanded: false, expandedVerticals: new Set(), session: null, authConfig: null, catalog: null, reimbursementItems: [], approvalReimbursementItems: [], administrators: [], selectedUsageToolId: null, editingUsagePeriodId: null };
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -184,7 +184,7 @@ function renderRedundancies(payload) {
 function renderReimbursements(payload) {
   if (!state.session) return;
   refreshReimbursements().catch(() => {
-    $("#reimbursementCards").innerHTML = payload.reimbursements.length ? payload.reimbursements.map((tool) => `<article class="card reimbursement-card"><div><h3>${escapeHtml(tool.name)}</h3><p>${money.format(tool.estimatedBrl)}/mês</p></div></article>`).join("") : '<div class="empty">Sem solicitações no momento.</div>';
+    $("#reimbursementHistoryTable").innerHTML = '<tr><td colspan="6"><div class="empty">Não foi possível carregar suas solicitações.</div></td></tr>';
   });
 }
 
@@ -247,6 +247,7 @@ function switchView(view) {
     approvals: ["Aprovar reembolsos", "Fila de solicitações pendentes e decisões registradas."],
     catalog: ["Cadastro de ferramentas", "Classificações e tipos para a governança da stack."],
     usage: ["Uso por área", "Histórico de usuários ativos por ferramenta e área."],
+    access: ["Gestão de acesso", "Administradores autorizados para operar a governança."],
   };
   [$("#pageTitle").textContent, $("#pageSubtitle").textContent] = titles[view];
   $("#sidebar").classList.remove("is-open");
@@ -322,6 +323,14 @@ function renderReimbursementRequests(items, selector, approval = false) {
   $(selector).innerHTML = items.map((item) => `<article class="card reimbursement-card"><div><h3>${escapeHtml(item.ferramenta_nome)}</h3><p>${money.format(Number(item.valor))} · ${escapeHtml(item.data_despesa)}</p><p>${escapeHtml(item.justificativa)}</p>${approval ? `<small>${escapeHtml(item.solicitante_email)}</small>` : `<small>${escapeHtml(item.situacao)}</small>`}</div>${approval && item.situacao === "pendente" ? `<div class="decision-actions"><button class="btn btn-primary" data-decision="aprovado" data-request-id="${escapeHtml(item.id)}">Aprovar</button><button class="btn btn-secondary" data-decision="recusado" data-request-id="${escapeHtml(item.id)}">Recusar</button></div>` : ""}</article>`).join("") || '<div class="empty">Sem solicitações no momento.</div>';
 }
 
+function renderMyReimbursements(items) {
+  $("#reimbursementHistoryTable").innerHTML = items.map((item) => `<tr><td>${escapeHtml(item.ferramenta_nome)}</td><td class="num">${money.format(Number(item.valor))}</td><td>${escapeHtml(item.data_despesa)}</td><td>${escapeHtml(item.justificativa)}</td><td><span class="badge ${item.situacao === "pendente" ? "neutral" : item.situacao === "aprovado" ? "success" : "danger"}">${statusLabel(item.situacao)}</span></td><td>${escapeHtml(item.situacao === "pendente" ? "Aguardando decisão" : item.comentario_decisao || "Sem comentário")}</td></tr>`).join("") || '<tr><td colspan="6"><div class="empty">Você ainda não possui solicitações de reembolso.</div></td></tr>';
+}
+
+function renderAdministrators(items) {
+  $("#accessTable").innerHTML = items.map((item) => `<tr><td>${escapeHtml(item.email)}</td><td><span class="badge success">Administrador</span></td><td>${escapeHtml(new Date(item.criado_em).toLocaleDateString("pt-BR"))}</td><td class="actions-cell">${item.email === state.session?.email ? '<span class="table-count">Seu acesso</span>' : `<button class="btn btn-danger btn-small" type="button" data-remove-administrator="${escapeHtml(item.id)}">Remover</button>`}</td></tr>`).join("") || '<tr><td colspan="4"><div class="empty">Sem administradores cadastrados.</div></td></tr>';
+}
+
 function reimbursementFilters() {
   return { year: $("#yearFilter").value, month: $("#monthFilter").value };
 }
@@ -362,8 +371,17 @@ async function refreshCatalog() {
 async function refreshReimbursements() {
   const items = await toolsApi("/api/reimbursements");
   state.reimbursementItems = items;
-  renderReimbursementRequests(items, "#reimbursementCards");
-  if (state.session?.isAdmin) renderApprovalDashboard(items);
+  renderMyReimbursements(items);
+  if (state.session?.isAdmin) {
+    state.approvalReimbursementItems = await toolsApi("/api/reimbursements?visao=aprovacao");
+    renderApprovalDashboard(state.approvalReimbursementItems);
+  }
+}
+
+async function refreshAdministrators() {
+  if (!state.session?.isAdmin) return;
+  state.administrators = await toolsApi("/api/access");
+  renderAdministrators(state.administrators);
 }
 
 function setLoginMessage(message) { $("#loginMessage").textContent = message || ""; }
@@ -387,6 +405,7 @@ async function initializeAuth() {
     $$(".admin-only").forEach((item) => item.classList.toggle("hidden", !session.isAdmin));
     await refreshCatalog();
     await refreshReimbursements();
+    await refreshAdministrators();
     return true;
   } catch (error) {
     localStorage.removeItem("qv-tools-token");
@@ -474,6 +493,15 @@ $("#reimbursementForm").addEventListener("submit", async (event) => {
     form.reset(); await refreshReimbursements();
   } catch (error) { alert(error.message); }
 });
+$("#accessForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  try {
+    await toolsApi("/api/access", { method: "POST", body: JSON.stringify({ email: $("#administratorEmail").value }) });
+    form.reset();
+    await refreshAdministrators();
+  } catch (error) { alert(error.message); }
+});
 document.addEventListener("click", (event) => {
   const costToggle = event.target.closest("[data-expand-cost]");
   if (costToggle) {
@@ -518,11 +546,19 @@ document.addEventListener("click", async (event) => {
   const editButton = event.target.closest("[data-edit-usage-period]");
   if (editButton) { editUsagePeriod(editButton.dataset.editUsagePeriod); return; }
   const deleteButton = event.target.closest("[data-delete-usage-period]");
-  if (!deleteButton || !window.confirm("Excluir este período de uso?")) return;
+  if (deleteButton && window.confirm("Excluir este período de uso?")) {
+    try {
+      await toolsApi("/api/usage", { method: "DELETE", body: JSON.stringify({ id: deleteButton.dataset.deleteUsagePeriod }) });
+      await refreshCatalog();
+      resetUsageEditor();
+    } catch (error) { alert(error.message); }
+    return;
+  }
+  const removeAdministratorButton = event.target.closest("[data-remove-administrator]");
+  if (!removeAdministratorButton || !window.confirm("Remover o acesso administrativo desta pessoa?")) return;
   try {
-    await toolsApi("/api/usage", { method: "DELETE", body: JSON.stringify({ id: deleteButton.dataset.deleteUsagePeriod }) });
-    await refreshCatalog();
-    resetUsageEditor();
+    await toolsApi("/api/access", { method: "DELETE", body: JSON.stringify({ id: removeAdministratorButton.dataset.removeAdministrator }) });
+    await refreshAdministrators();
   } catch (error) { alert(error.message); }
 });
 

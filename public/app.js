@@ -398,16 +398,18 @@ $("#loginButton").addEventListener("click", () => {
 });
 $("#catalogForm").addEventListener("submit", async (event) => {
   event.preventDefault();
+  const form = event.currentTarget;
   try {
     await toolsApi("/api/catalog", { method: "POST", body: JSON.stringify({ name: $("#catalogToolName").value, toolType: $("#catalogToolType").value, functionalCategoryId: $("#catalogCategory").value || null }) });
-    event.currentTarget.reset(); await refreshCatalog();
+    form.reset(); await refreshCatalog();
   } catch (error) { alert(error.message); }
 });
 $("#categoryForm").addEventListener("submit", async (event) => {
   event.preventDefault();
+  const form = event.currentTarget;
   try {
     await toolsApi("/api/categories", { method: "POST", body: JSON.stringify({ nome: $("#categoryName").value }) });
-    event.currentTarget.reset(); await refreshCatalog();
+    form.reset(); await refreshCatalog();
   } catch (error) { alert(error.message); }
 });
 $("#newAreaButton").addEventListener("click", async () => {
@@ -431,10 +433,11 @@ $("#syncButton").addEventListener("click", async () => {
 });
 $("#reimbursementForm").addEventListener("submit", async (event) => {
   event.preventDefault();
+  const form = event.currentTarget;
   const tool = state.catalog?.tools.find((item) => item.id === $("#reimbursementTool").value);
   try {
     await toolsApi("/api/reimbursements", { method: "POST", body: JSON.stringify({ toolId: tool?.id || null, toolName: $("#reimbursementToolName").value || tool?.nome, amount: $("#reimbursementAmount").value, expenseDate: $("#reimbursementDate").value, justification: $("#reimbursementJustification").value }) });
-    event.currentTarget.reset(); await refreshReimbursements();
+    form.reset(); await refreshReimbursements();
   } catch (error) { alert(error.message); }
 });
 document.addEventListener("click", (event) => {

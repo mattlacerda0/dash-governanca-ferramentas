@@ -104,7 +104,10 @@ create index if not exists solicitacoes_reembolso_situacao_criado_idx on _dashbo
 
 create or replace function _dashboard_ferramentas.atualizar_data_modificacao()
 returns trigger language plpgsql set search_path = '' as $$
-begin new.atualizado_em = now(); return new; end;
+begin
+  new.atualizado_em := now();
+  return new;
+end;
 $$;
 
 drop trigger if exists ferramentas_atualizar_modificacao on _dashboard_ferramentas.ferramentas;

@@ -1,4 +1,4 @@
-import { reimbursementMetrics } from "./reimbursement-metrics.mjs";
+import { reimbursementMetrics } from "./reimbursement-metrics.js";
 
 const state = { payload: null, view: "overview", search: "", costExpanded: false, expandedVerticals: new Set(), session: null, authConfig: null, catalog: null, reimbursementItems: [], selectedUsageToolId: null, editingUsagePeriodId: null };
 const $ = (selector) => document.querySelector(selector);

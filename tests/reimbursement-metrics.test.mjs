@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { filterReimbursements, reimbursementMetrics } from "../public/reimbursement-metrics.mjs";
+import { filterReimbursements, reimbursementMetrics } from "../public/reimbursement-metrics.js";
 
 const items = [
   {

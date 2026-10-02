@@ -18,6 +18,7 @@ export function reimbursementMetrics(items, filters) {
   const monthly = new Map();
   const tools = new Map();
   const decisionDurations = [];
+
   for (const item of filtered) {
     const value = Number(item.valor) || 0;
     const current = status[item.situacao] || status.pendente;
@@ -26,15 +27,20 @@ export function reimbursementMetrics(items, filters) {
     const key = String(item.data_despesa || "").slice(0, 7);
     if (key) {
       const month = monthly.get(key) || { month: key, value: 0, count: 0 };
-      month.value += value; month.count += 1; monthly.set(key, month);
+      month.value += value;
+      month.count += 1;
+      monthly.set(key, month);
     }
     const tool = String(item.ferramenta_nome || "Sem ferramenta informada");
     const toolSummary = tools.get(tool) || { label: tool, value: 0, count: 0 };
-    toolSummary.value += value; toolSummary.count += 1; tools.set(tool, toolSummary);
+    toolSummary.value += value;
+    toolSummary.count += 1;
+    tools.set(tool, toolSummary);
     const created = validDate(item.criado_em);
     const decided = validDate(item.decidido_em);
     if (item.situacao !== "pendente" && created && decided && decided >= created) decisionDurations.push(decided - created);
   }
+
   const decided = status.aprovado.count + status.recusado.count;
   return {
     items: filtered,

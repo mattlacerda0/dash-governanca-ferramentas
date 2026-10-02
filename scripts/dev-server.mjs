@@ -38,7 +38,7 @@ const server = createServer(async (req, res) => {
     return;
   }
   const toolsResource = {
-    "/api/auth-config": "auth-config", "/api/session": "session", "/api/catalog": "catalog", "/api/areas": "areas",
+    "/api/auth-config": "auth-config", "/api/session": "session", "/api/catalog": "catalog", "/api/areas": "areas", "/api/categories": "categories",
     "/api/usage": "usage", "/api/reimbursements": "reimbursements", "/api/reimbursement-decision": "reimbursement-decision", "/api/sync": "sync",
   }[url.pathname];
   if (toolsResource) {

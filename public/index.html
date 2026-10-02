@@ -133,6 +133,11 @@
             <label>Funcionalidade principal<select id="catalogCategory"></select></label>
             <div class="form-actions"><button class="btn btn-primary" type="submit">Salvar ferramenta</button><button class="btn btn-secondary" id="syncButton" type="button">Sincronizar Drive</button></div>
           </form></article>
+          <article class="card form-card"><form id="categoryForm" class="form-grid">
+            <div class="form-wide form-heading"><p class="eyebrow">Classificação</p><h3>Nova funcionalidade principal</h3></div>
+            <label>Nome da funcionalidade<input id="categoryName" required maxlength="120" placeholder="Ex.: Segurança e conformidade"></label>
+            <div class="form-actions"><button class="btn btn-secondary" type="submit">Cadastrar funcionalidade</button></div>
+          </form></article>
           <article class="card table-card"><div class="table-wrap"><table class="qv-table gd-table management-table"><thead><tr><th>Ferramenta</th><th>Tipo</th><th>Funcionalidade principal</th><th class="actions-cell">Ação</th></tr></thead><tbody id="catalogTable"></tbody></table></div></article>
         </div>
 

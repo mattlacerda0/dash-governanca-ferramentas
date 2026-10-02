@@ -403,6 +403,13 @@ $("#catalogForm").addEventListener("submit", async (event) => {
     event.currentTarget.reset(); await refreshCatalog();
   } catch (error) { alert(error.message); }
 });
+$("#categoryForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  try {
+    await toolsApi("/api/categories", { method: "POST", body: JSON.stringify({ nome: $("#categoryName").value }) });
+    event.currentTarget.reset(); await refreshCatalog();
+  } catch (error) { alert(error.message); }
+});
 $("#newAreaButton").addEventListener("click", async () => {
   try { await toolsApi("/api/areas", { method: "POST", body: JSON.stringify({ nome: $("#newAreaName").value }) }); $("#newAreaName").value = ""; await refreshCatalog(); }
   catch (error) { alert(error.message); }

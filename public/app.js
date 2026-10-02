@@ -24,16 +24,39 @@ function valueOrMissing(value, formatter) {
   return Number.isFinite(value) ? formatter(value) : "Sem dado informado";
 }
 
+function rangeIncludesDate(range, value) {
+  const date = String(value || "").slice(0, 10);
+  return Boolean(date && date >= String(range?.start || "").slice(0, 10) && date <= String(range?.end || "").slice(0, 10));
+}
+
+function approvedReimbursementTotal(payload) {
+  const requests = state.session?.isAdmin ? state.approvalReimbursementItems : state.reimbursementItems;
+  if (!Array.isArray(requests)) return null;
+  return requests.filter((item) => item.situacao === "aprovado" && rangeIncludesDate(payload.filters.range, item.data_despesa))
+    .reduce((sum, item) => sum + Number(item.valor || 0), 0);
+}
+
+function productExperienceScope(payload) {
+  if (state.view !== "pe") return { tools: payload.tools, redundancies: payload.crossAreaRedundancies || [] };
+  const names = productExperienceToolNames(payload) || new Set();
+  return {
+    tools: payload.tools.filter((tool) => names.has(normalizeName(tool.name))),
+    redundancies: (payload.crossAreaRedundancies || []).filter((item) => item.areas.includes("Product & Experience")),
+  };
+}
+
 function renderKpis(payload) {
-  const { kpis } = payload;
-  const drive = payload.dataMode === "drive";
+  const scope = productExperienceScope(payload);
+  const isProductExperience = state.view === "pe";
+  const totalCost = scope.tools.length ? scope.tools.reduce((sum, tool) => sum + (Number(tool.totalCost) || 0), 0) : null;
+  const approvedReimbursements = approvedReimbursementTotal(payload);
+  const crossAreaCount = scope.redundancies.length;
   $("#kpis").innerHTML = [
-    kpi(drive ? "Ferramentas no período" : "Total de ferramentas QV", valueOrMissing(kpis.totalTools, number.format), drive ? "Fornecedores categorizados" : "Inventário corporativo", "kpi-featured"),
-    kpi(drive ? "Ferramentas no recorte" : "Ferramentas P&E", valueOrMissing(kpis.peTools, number.format), drive ? "Após filtros aplicados" : $("#verticalFilter").value === "all" ? "Inventário completo de P&E" : "Recorte da vertical", "kpi-compact"),
-    kpi("Índice de redundância", valueOrMissing(kpis.redundancyRate, percent.format), drive ? "Sem dado informado" : "Ferramentas com sobreposição", "kpi-compact"),
-    kpi(drive ? "Custo no período" : "Custo mensal P&E", valueOrMissing(kpis.monthlyEstimated, money.format), drive ? "Lançamentos pagos e em atraso" : "Estimativa recorrente", "kpi-highlight"),
-    kpi("Taxa de reembolsos", valueOrMissing(kpis.reimbursementRate, percent.format), drive ? "Sem dado informado" : `${payload.reimbursements.length} ferramentas no recorte`, "kpi-compact"),
-    kpi("Custo por pessoa", valueOrMissing(kpis.costPerHead, money.format), drive ? "Sem dado informado" : `${number.format(kpis.headcount)} pessoas em P&E`, "kpi-compact"),
+    kpi("Ferramentas no período", number.format(scope.tools.length), isProductExperience ? "Com uso ativo em Product & Experience" : "Fornecedores categorizados", "kpi-featured"),
+    kpi("Ferramentas no recorte", number.format(scope.tools.length), $("#verticalFilter").value === "all" ? "Após filtros aplicados" : "Categoria selecionada", "kpi-compact"),
+    kpi("Redundâncias cross-sector", number.format(crossAreaCount), crossAreaCount ? "Funcionalidades em mais de uma área" : "Nenhuma funcionalidade duplicada entre áreas", "kpi-compact"),
+    kpi("Custo no período", valueOrMissing(totalCost, money.format), isProductExperience ? "Ferramentas em Product & Experience" : "Lançamentos pagos e em atraso", "kpi-highlight"),
+    kpi("Reembolsos aprovados", valueOrMissing(approvedReimbursements, money.format), "Valor aprovado no período", "kpi-compact"),
   ].join("");
 }
 
@@ -196,6 +219,7 @@ function render(payload) {
   $("#warning").classList.toggle("hidden", !payload.warning);
   $("#status").classList.add("hidden");
   $("#content").classList.remove("hidden");
+  $("#kpis").classList.toggle("hidden", !["overview", "pe"].includes(state.view));
 }
 
 async function load() {
@@ -237,6 +261,8 @@ function switchView(view) {
     access: ["Gestão de acesso", "Administradores autorizados para operar a governança."],
   };
   [$("#pageTitle").textContent, $("#pageSubtitle").textContent] = titles[view];
+  $("#kpis").classList.toggle("hidden", !["overview", "pe"].includes(view));
+  if (state.payload) renderKpis(state.payload);
   $("#sidebar").classList.remove("is-open");
   $("#menuButton").setAttribute("aria-expanded", "false");
 }
@@ -456,6 +482,7 @@ async function refreshReimbursements() {
     state.approvalReimbursementItems = await toolsApi("/api/reimbursements?visao=aprovacao");
     renderApprovalDashboard(state.approvalReimbursementItems);
   }
+  if (state.payload) renderKpis(state.payload);
 }
 
 async function refreshAdministrators() {

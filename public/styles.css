@@ -86,7 +86,7 @@ select, input { width: 100%; min-height: 40px; border: 1px solid var(--border); 
 .status-error { border-color: #efb3a9; background: var(--danger-soft); color: var(--danger); }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.kpi-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; margin-bottom: 38px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin-bottom: 38px; }
 .kpi { min-width: 0; min-height: 138px; padding: 18px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow-soft); }
 .kpi-featured { position: relative; border-left: 4px solid var(--foreground); padding-left: 16px; }
 .kpi-highlight { border-color: #f2b6a5; background: var(--primary-soft); }

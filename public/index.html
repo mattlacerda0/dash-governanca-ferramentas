@@ -133,21 +133,23 @@
             <label>Funcionalidade principal<select id="catalogCategory"></select></label>
             <div class="form-actions"><button class="btn btn-primary" type="submit">Salvar ferramenta</button><button class="btn btn-secondary" id="syncButton" type="button">Sincronizar Drive</button></div>
           </form></article>
-          <article class="card table-card"><div class="table-wrap"><table class="qv-table gd-table"><thead><tr><th>Ferramenta</th><th>Tipo</th><th>Funcionalidade principal</th></tr></thead><tbody id="catalogTable"></tbody></table></div></article>
+          <article class="card table-card"><div class="table-wrap"><table class="qv-table gd-table management-table"><thead><tr><th>Ferramenta</th><th>Tipo</th><th>Funcionalidade principal</th><th class="actions-cell">Ação</th></tr></thead><tbody id="catalogTable"></tbody></table></div></article>
         </div>
 
         <div class="view" data-view-panel="usage">
-          <section class="section-head"><div><p class="eyebrow">Administração</p><h2>Uso por área</h2></div><p>Cadastre períodos contínuos; uma pausa deve ser registrada como um novo período.</p></section>
+          <section class="section-head"><div><p class="eyebrow">Administração</p><h2>Uso por área</h2></div><p>Selecione uma ferramenta para incluir, editar ou remover períodos de uso por área.</p></section>
+          <article class="card table-card usage-tools-card"><div class="table-toolbar"><div><p class="local-hint">Catálogo completo</p><h3>Ferramentas cadastradas</h3></div><p class="table-count" id="usageToolCount"></p></div><div class="table-wrap"><table class="qv-table gd-table management-table"><thead><tr><th>Ferramenta</th><th>Áreas em uso</th><th class="actions-cell">Ação</th></tr></thead><tbody id="usageToolsTable"></tbody></table></div></article>
           <article class="card form-card"><form id="usageForm" class="form-grid">
+            <div class="form-wide form-heading"><p class="eyebrow">Período de uso</p><h3 id="usageFormTitle">Cadastrar período</h3></div>
             <label>Ferramenta<select id="usageTool" required></select></label>
             <label>Área<select id="usageArea" required></select></label>
             <label>Usuários<input id="usageUsers" type="number" min="1" step="1" required></label>
             <label>Início<input id="usageStart" type="date" required></label>
             <label>Fim (opcional)<input id="usageEnd" type="date"></label>
             <label>Nova área<input id="newAreaName" maxlength="120"></label>
-            <div class="form-actions"><button class="btn btn-secondary" id="newAreaButton" type="button">Cadastrar área</button><button class="btn btn-primary" type="submit">Salvar período</button></div>
+            <div class="form-actions"><button class="btn btn-secondary" id="newAreaButton" type="button">Cadastrar área</button><button class="btn btn-secondary hidden" id="cancelUsageEdit" type="button">Cancelar edição</button><button class="btn btn-primary" id="usageSaveButton" type="submit">Salvar período</button></div>
           </form></article>
-          <article class="card table-card"><div class="table-wrap"><table class="qv-table gd-table"><thead><tr><th>Ferramenta</th><th>Área</th><th class="num">Usuários</th><th>Início</th><th>Fim</th></tr></thead><tbody id="usageTable"></tbody></table></div></article>
+          <article class="card table-card"><div class="table-toolbar"><div><p class="local-hint">Ferramenta selecionada</p><h3 id="usagePeriodsTitle">Períodos cadastrados</h3></div></div><div class="table-wrap"><table class="qv-table gd-table management-table"><thead><tr><th>Área</th><th class="num">Usuários</th><th>Início</th><th>Fim</th><th class="actions-cell">Ações</th></tr></thead><tbody id="usageTable"></tbody></table></div></article>
         </div>
       </section>
     </main>

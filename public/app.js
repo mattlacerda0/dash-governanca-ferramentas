@@ -1,4 +1,4 @@
-const state = { payload: null, view: "overview", search: "", costExpanded: false, expandedVerticals: new Set(), session: null, authConfig: null, catalog: null };
+const state = { payload: null, view: "overview", search: "", costExpanded: false, expandedVerticals: new Set(), session: null, authConfig: null, catalog: null, selectedUsageToolId: null, editingUsagePeriodId: null };
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -265,17 +265,55 @@ async function toolsApi(path, options = {}) {
 function renderCatalog() {
   const catalog = state.catalog;
   if (!catalog) return;
-  const categoryOptions = ['<option value="">Sem categoria</option>', ...catalog.categories.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.nome)}</option>`)].join("");
+  const categoryOptionsFor = (selected = "") => ['<option value="">Sem categoria</option>', ...catalog.categories.map((item) => `<option value="${escapeHtml(item.id)}"${item.id === selected ? " selected" : ""}>${escapeHtml(item.nome)}</option>`)].join("");
+  const categoryOptions = categoryOptionsFor();
   $("#catalogCategory").innerHTML = categoryOptions;
   const toolOptions = ['<option value="">Selecione</option>', ...catalog.tools.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.nome)}</option>`)].join("");
   $("#usageTool").innerHTML = toolOptions;
   $("#reimbursementTool").innerHTML = ['<option value="">Selecione</option>', ...catalog.tools.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.nome)}</option>`)].join("");
   $("#usageArea").innerHTML = ['<option value="">Selecione</option>', ...catalog.areas.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.nome)}</option>`)].join("");
   const categories = new Map(catalog.categories.map((item) => [item.id, item.nome]));
-  $("#catalogTable").innerHTML = catalog.tools.map((item) => `<tr><td>${escapeHtml(item.nome)}</td><td>${item.tipo_ferramenta === "estruturante" ? "Estruturante" : "Opcional"}</td><td>${escapeHtml(categories.get(item.categoria_funcional_id) || "Sem dado informado")}</td></tr>`).join("") || '<tr><td colspan="3">Sem dado informado.</td></tr>';
+  $("#catalogTable").innerHTML = catalog.tools.map((item) => `<tr data-catalog-tool-id="${escapeHtml(item.id)}"><td>${escapeHtml(item.nome)}</td><td><select data-catalog-type aria-label="Tipo de ${escapeHtml(item.nome)}"><option value="estruturante"${item.tipo_ferramenta === "estruturante" ? " selected" : ""}>Estruturante</option><option value="opcional"${item.tipo_ferramenta !== "estruturante" ? " selected" : ""}>Opcional</option></select></td><td><select data-catalog-category aria-label="Funcionalidade de ${escapeHtml(item.nome)}">${categoryOptionsFor(item.categoria_funcional_id)}</select></td><td class="actions-cell"><button class="btn btn-secondary btn-small" type="button" data-save-catalog-tool>Salvar</button></td></tr>`).join("") || '<tr><td colspan="4">Sem dado informado.</td></tr>';
   const tools = new Map(catalog.tools.map((item) => [item.id, item.nome]));
   const areas = new Map(catalog.areas.map((item) => [item.id, item.nome]));
-  $("#usageTable").innerHTML = catalog.periods.map((item) => `<tr><td>${escapeHtml(tools.get(item.ferramenta_id) || "")}</td><td>${escapeHtml(areas.get(item.area_id) || "")}</td><td class="num">${number.format(item.quantidade_usuarios)}</td><td>${escapeHtml(item.data_inicio)}</td><td>${escapeHtml(item.data_fim || "Em uso")}</td></tr>`).join("") || '<tr><td colspan="5">Sem período cadastrado.</td></tr>';
+  if (!catalog.tools.some((item) => item.id === state.selectedUsageToolId)) state.selectedUsageToolId = catalog.tools[0]?.id || null;
+  $("#usageTool").value = state.selectedUsageToolId || "";
+  const periodsByTool = new Map(catalog.tools.map((item) => [item.id, []]));
+  catalog.periods.forEach((item) => periodsByTool.get(item.ferramenta_id)?.push(item));
+  $("#usageToolsTable").innerHTML = catalog.tools.map((item) => {
+    const activeAreas = [...new Set((periodsByTool.get(item.id) || []).map((period) => areas.get(period.area_id)).filter(Boolean))];
+    return `<tr><td>${escapeHtml(item.nome)}</td><td>${escapeHtml(activeAreas.join(", ") || "Sem área cadastrada")}</td><td class="actions-cell"><button class="btn btn-secondary btn-small" type="button" data-select-usage-tool="${escapeHtml(item.id)}">Editar uso</button></td></tr>`;
+  }).join("") || '<tr><td colspan="3">Sem ferramenta cadastrada.</td></tr>';
+  $("#usageToolCount").textContent = `${number.format(catalog.tools.length)} ferramentas`;
+  const selectedTool = catalog.tools.find((item) => item.id === state.selectedUsageToolId);
+  $("#usagePeriodsTitle").textContent = selectedTool ? `Períodos de uso: ${selectedTool.nome}` : "Períodos cadastrados";
+  const selectedPeriods = periodsByTool.get(state.selectedUsageToolId) || [];
+  $("#usageTable").innerHTML = selectedPeriods.map((item) => `<tr><td>${escapeHtml(areas.get(item.area_id) || "")}</td><td class="num">${number.format(item.quantidade_usuarios)}</td><td>${escapeHtml(item.data_inicio)}</td><td>${escapeHtml(item.data_fim || "Em uso")}</td><td class="actions-cell"><button class="btn btn-secondary btn-small" type="button" data-edit-usage-period="${escapeHtml(item.id)}">Editar</button><button class="btn btn-danger btn-small" type="button" data-delete-usage-period="${escapeHtml(item.id)}">Excluir</button></td></tr>`).join("") || '<tr><td colspan="5">Sem período cadastrado para esta ferramenta.</td></tr>';
+}
+
+function resetUsageEditor() {
+  state.editingUsagePeriodId = null;
+  $("#usageForm").reset();
+  $("#usageTool").value = state.selectedUsageToolId || "";
+  $("#usageFormTitle").textContent = "Cadastrar período";
+  $("#usageSaveButton").textContent = "Salvar período";
+  $("#cancelUsageEdit").classList.add("hidden");
+}
+
+function editUsagePeriod(id) {
+  const period = state.catalog?.periods.find((item) => item.id === id);
+  if (!period) return;
+  state.editingUsagePeriodId = id;
+  state.selectedUsageToolId = period.ferramenta_id;
+  $("#usageTool").value = period.ferramenta_id;
+  $("#usageArea").value = period.area_id;
+  $("#usageUsers").value = period.quantidade_usuarios;
+  $("#usageStart").value = period.data_inicio;
+  $("#usageEnd").value = period.data_fim || "";
+  $("#usageFormTitle").textContent = "Editar período";
+  $("#usageSaveButton").textContent = "Salvar alterações";
+  $("#cancelUsageEdit").classList.remove("hidden");
+  $("#usageForm").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderReimbursementRequests(items, selector, approval = false) {
@@ -372,10 +410,14 @@ $("#newAreaButton").addEventListener("click", async () => {
 $("#usageForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   try {
-    await toolsApi("/api/usage", { method: "POST", body: JSON.stringify({ toolId: $("#usageTool").value, areaId: $("#usageArea").value, usersCount: $("#usageUsers").value, startsOn: $("#usageStart").value, endsOn: $("#usageEnd").value || null }) });
-    event.currentTarget.reset(); await refreshCatalog();
+    const body = { toolId: $("#usageTool").value, areaId: $("#usageArea").value, usersCount: $("#usageUsers").value, startsOn: $("#usageStart").value, endsOn: $("#usageEnd").value || null };
+    state.selectedUsageToolId = body.toolId;
+    if (state.editingUsagePeriodId) await toolsApi("/api/usage", { method: "PATCH", body: JSON.stringify({ id: state.editingUsagePeriodId, ...body }) });
+    else await toolsApi("/api/usage", { method: "POST", body: JSON.stringify(body) });
+    await refreshCatalog(); resetUsageEditor();
   } catch (error) { alert(error.message); }
 });
+$("#cancelUsageEdit").addEventListener("click", resetUsageEditor);
 $("#syncButton").addEventListener("click", async () => {
   try { await toolsApi("/api/sync", { method: "POST", body: "{}" }); await refreshCatalog(); await load(); }
   catch (error) { alert(error.message); }
@@ -409,6 +451,35 @@ document.addEventListener("click", async (event) => {
   const comment = window.prompt(button.dataset.decision === "approved" ? "Comentário da aprovação (opcional):" : "Motivo da recusa (opcional):") || "";
   try { await toolsApi("/api/reimbursement-decision", { method: "PATCH", body: JSON.stringify({ id: button.dataset.requestId, situacao: button.dataset.decision, comment }) }); await refreshReimbursements(); }
   catch (error) { alert(error.message); }
+});
+document.addEventListener("click", async (event) => {
+  const catalogSave = event.target.closest("[data-save-catalog-tool]");
+  if (catalogSave) {
+    const row = catalogSave.closest("tr");
+    try {
+      await toolsApi("/api/catalog", { method: "PATCH", body: JSON.stringify({ id: row.dataset.catalogToolId, toolType: row.querySelector("[data-catalog-type]").value, functionalCategoryId: row.querySelector("[data-catalog-category]").value || null }) });
+      await refreshCatalog();
+    } catch (error) { alert(error.message); }
+    return;
+  }
+  const selectTool = event.target.closest("[data-select-usage-tool]");
+  if (selectTool) {
+    state.selectedUsageToolId = selectTool.dataset.selectUsageTool;
+    state.editingUsagePeriodId = null;
+    renderCatalog();
+    resetUsageEditor();
+    $("#usageForm").scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+  const editButton = event.target.closest("[data-edit-usage-period]");
+  if (editButton) { editUsagePeriod(editButton.dataset.editUsagePeriod); return; }
+  const deleteButton = event.target.closest("[data-delete-usage-period]");
+  if (!deleteButton || !window.confirm("Excluir este período de uso?")) return;
+  try {
+    await toolsApi("/api/usage", { method: "DELETE", body: JSON.stringify({ id: deleteButton.dataset.deleteUsagePeriod }) });
+    await refreshCatalog();
+    resetUsageEditor();
+  } catch (error) { alert(error.message); }
 });
 
 initializeAuth().then((authenticated) => { if (authenticated) load(); }).catch((error) => { $("#loginGate").classList.remove("hidden"); setLoginMessage(error.message || "Não foi possível preparar a autenticação."); });
